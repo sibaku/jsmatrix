@@ -3,7 +3,7 @@
 This is a library for matrix and vector computations for JavaScript. Besides the general features such as multiplication, it also provides methods for solving equations and computing decompositions. Currently LU decomposition with partial pivoting, SVD and bidiagonalization are implemented.
 Importantly, various kinds of views, such as for rows, columns, blocks, transpose and diagonals can be used to manipulate data more naturally. 
 
-All matrices support either typed storage or generic arrays. Special matrices can be implemented by yourself by providing some object with the AbstractMat interface specified in the documentation.
+All matrices support either typed storage or generic arrays. Special matrices can be implemented by yourself by providing some object with the AbstractMat interface specified in the documentation. Documentation can be found in the docs folder and to view without cloning under https://raw.githack.com/sibaku/jsmatrix/master/doc/index.html
 
 ## Usage
 
@@ -314,3 +314,6 @@ You can find a more complicated example in the examples folder under exampleSVD.
 A random point cloud located roughly in a rotated plane is generated. The SVD is used to compute an approximation of the normal of that plane from the random points.
 
 At the end, the points and normal are visualized in a HTML canvas similar to graphic APIs such as OpenGL.
+
+### Preview
+![3D Points rendered in 2D and visualized normal computed from SVD](https://github.com/sibaku/jsmatrix/blob/master/examples/exampleSVD/example_svd_normal.jpg?raw=true)
