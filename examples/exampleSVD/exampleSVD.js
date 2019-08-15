@@ -115,7 +115,7 @@ window.onload = function () {
     // Scale random [0,1] to [0,6]
     m.scale(rz, 6, rz);
     // Center random values to [-3,3]
-    m.addScalar(rz, -5);
+    m.addScalar(rz, -3);
 
     // The plane is in the xz-plane
     // The y component will not have as much random range, just a bit to simulate a bit of noise
