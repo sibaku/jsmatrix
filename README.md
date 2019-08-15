@@ -314,3 +314,6 @@ You can find a more complicated example in the examples folder under exampleSVD.
 A random point cloud located roughly in a rotated plane is generated. The SVD is used to compute an approximation of the normal of that plane from the random points.
 
 At the end, the points and normal are visualized in a HTML canvas similar to graphic APIs such as OpenGL.
+
+### Preview
+![3D Points rendered in 2D and visualized normal computed from SVD](https://github.com/sibaku/jsmatrix/blob/master/examples/exampleSVD/example_svd_normal.jpg?raw=true)
