@@ -1102,7 +1102,16 @@ function copy(m) {
  */
 function isVec(m) {
     return m.cols() === 1;
+}/**
+ * Checks whether a matrix is a row vector, that is matrices with one row
+ * 
+ * @param {AbstractMat} m - The matrix to check
+ * @returns {boolean} True, if the matrix is a row vector, false otherwise
+ */
+function isRowVec(m) {
+    return m.rows() === 1;
 }
+//*****************************************************
 //*****************************************************
 /**
  * Adds a value to each entry in the matrix
@@ -1339,6 +1348,17 @@ function neg(m, out) {
     }
 
     return out;
+}
+//*****************************************************
+/**
+ * Maps each element to its absolute value
+ * 
+ * @param {AbstractMat} a - The input matrix
+ * @param {AbstractMat} [out] - The output matrix. If not specified, a new matrix will be created
+ * @returns {AbstractMat} The output matrix
+ */
+function abs(a, out) {
+    return map(a, x => Math.abs(x), out);
 }
 //*****************************************************
 /**
@@ -2009,6 +2029,10 @@ function det(m) {
 
         var lu = computePLUD(m);
 
+        // singular matrix
+        if (!lu) {
+            return 0.0;
+        }
         // lower diagonal is 1s -> determinant is 1
         // total determinant is therefore just product of u diagonal
         var s = (lu.numSwaps % 2 === 0 ? 1 : -1) * reduce(diag(lu.U), (acc, v) => acc * v);
@@ -2116,7 +2140,8 @@ function isSquare(a) {
  * 
  * This will not check, if the matrix is invertable and assume it is in the square case.
  * 
- * Solving for square matrices is accomplished via a PLU decomposition.
+ * Solving for square matrices is accomplished via a PLU decomposition. If that fails due to singularities,
+ * the result will be computed with an SVD.
  * Rectangular matrices are solved using the SVD, thus not solving exactly, but minimizing |Ax - b|_2
  * 
  * @param {AbstractMat} a - The linear system
@@ -2134,6 +2159,11 @@ function solve(a, b, out) {
         // try plu
         var plu = computePLUD(a);
 
+        // singular matrix solve with svd instead
+        if (!plu) {
+            var svd = computeSVD(a);
+            return svd.solve(b, out);
+        }
         return plu.solve(b, out);
     }
 
@@ -2185,7 +2215,7 @@ function solveSVD(svd, b, out) {
 
     let r = 0;
 
-    out = out !== undefined ? out : similar(b,N,P);
+    out = out !== undefined ? out : similar(b, N, P);
     setZero(out);
 
     for (let j = 0; j < P; j++) {
@@ -2200,11 +2230,11 @@ function solveSVD(svd, b, out) {
             }
 
             var zr = dot(col(U, r), bj) / sigma;
-            add(zj,scale(col(V,r),zr),zj);
+            add(zj, scale(col(V, r), zr), zj);
         }
 
     }
-   
+
 
     return out;
 }
@@ -2374,6 +2404,21 @@ class PLUD {
     solve(b, out) {
         return solvePLU(this, b, out);
     }
+
+    toMat(out) {
+        var M = this.P.rows();
+        var N = this.U.cols();
+
+        out = out !== undefined ? out : similar(this.U, M, N);
+
+        if (out.rows() !== M || out.cols() !== N) {
+            throw "Output has wrong size";
+        }
+
+        return mult(transpose(this.P), mult(this.L, this.U), out);
+    }
+
+
 }
 //*****************************************************
 /**
@@ -2392,24 +2437,22 @@ class PLUD {
  * @returns {PLUD} The LU decomposition with partial pivoting
  */
 function computePLUD(a, out) {
-    if (a.rows() !== a.cols()) {
-        throw "PLU decomposition only defined for square sources";
-    }
 
     var n = a.rows();
-
-    // Doolittle's factorization algorithm
+    var r = a.cols();
+    var rnmin = Math.min(a.rows(), a.cols());
 
     var permutes = TypedMatFactory.new(Int32Array).uninitialized(n, 1);
     map(permutes, (v, i) => i, permutes);
 
     if (out === undefined) {
         out = similar(a);
-        insert(out, a);
-    }
 
+    }
+    insert(out, a);
     var numSwaps = 0;
-    for (let k = 0; k < n; k++) {
+
+    for (let k = 0; k < rnmin; k++) {
 
         // find largest value in colum for partial pivot
 
@@ -2429,30 +2472,35 @@ function computePLUD(a, out) {
             swapRow(out, maxIndex, k);
         }
 
-        for (let m = k; m < n; m++) {
+        // Algorithm from "Matrix computations"
 
-            let s = 0;
+        var outkk = out.at(k, k);
 
-            for (let j = 0; j < k; j++) {
-                s += out.at(k, j) * out.at(j, m);
-            }
-
-            out.set(out.at(k, m) - s, k, m);
+        // singularity detected
+        if (Math.abs(outkk) < 1E-7) {
+            return null;
         }
+        var subcol = subvec(col(out, k), k + 1);
+        scale(subcol, 1.0 / outkk, subcol);
 
-        for (let i = k + 1; i < n; i++) {
-            let s = 0;
+        // update lower block
+        // case n > r
+        if (k < r) {
+            var rowRho = subrowvec(row(out, k), k + 1);
 
-            for (let j = 0; j < k; j++) {
-                s += out.at(i, j) * out.at(j, k);
+            for (let rho = k + 1; rho < n; rho++) {
+                var subrow = subrowvec(row(out, rho), k + 1);
+                var arhok = out.at(rho, k);
+                sub(subrow, scale(rowRho, arhok), subrow);
+
             }
-
-            var ukk = out.at(k, k);
-            out.set((out.at(i, k) - s) / ukk, i, k);
         }
     }
-    var L = TriangularView.new(out, TriangularMode.UNIT_LOWER);
-    var U = TriangularView.new(out, TriangularMode.UPPER);
+
+    var blockL = block(out, 0, 0, a.rows(), rnmin);
+    var blockU = block(out, 0, 0, rnmin, a.cols());
+    var L = TriangularView.new(blockL, TriangularMode.UNIT_LOWER);
+    var U = TriangularView.new(blockU, TriangularMode.UPPER);
     var P = RowPermutation.new(toArray(permutes), permutes.rows(), permutes.rows(), a.type());
     return PLUD.new(P, L, U, numSwaps);
 }
@@ -2578,6 +2626,22 @@ function subvec(v, start, rows) {
     }
     rows = rows !== undefined ? rows : v.rows() - start;
     return block(v, start, 0, rows, 1);
+}
+//*****************************************************
+/**
+ * Constructs a subvector view for a given row vector
+ * 
+ * @param {AbstractMat} v - The base row vector
+ * @param {number} start - The start index
+ * @param {number} [cols] - The number of columns. When not specified, the columns will be the remaining one in the base vector
+ * @returns {BlockView} A subvector view of the base vector
+ */
+function subrowvec(v, start, cols) {
+    if (!isRowVec(v)) {
+        throw "Input for subvec needs to be a row vector";
+    }
+    cols = cols !== undefined ? cols : v.cols() - start;
+    return block(v, 0, start, 1, cols);
 }
 //*****************************************************
 // Adapted from Matrix Multiplication 5.1
@@ -4069,6 +4133,7 @@ export {
     reduce,
     sum,
     neg,
+    abs,
     cwiseMult, cwiseDiv,
     dot,
     scale,
