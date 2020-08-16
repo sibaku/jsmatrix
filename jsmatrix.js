@@ -1,6 +1,3 @@
-// Linter comments
-/* global Float32Array, Float64Array, Int8Array, Uint8Array, Uint8ClampedArray,Int16Array,Uint16Array,Int32Array,Uint32Array,BigInt64Array,BigUint64Array */
-
 /**
  * Storage types used for matrices
  */
@@ -19,7 +16,6 @@ const any = Array;
 
 //*****************************************************
 let currentDefaultType = f32;
-
 
 //*****************************************************
 function optional(v, defaultValue) {
@@ -89,7 +85,7 @@ class Mat {
      * @param {number} [innerStride=1] Units from one element to the next. By default 1
      * @param {number} [outerStride=rows] Units from one column to the next. By default the number of rows
      */
-    constructor(data, rows, cols, innerStride, outerStride) {
+    constructor(data, rows, cols, innerStride = 1, outerStride = rows) {
         /** @private */
         this._data = data;
         /** @private */
@@ -97,9 +93,9 @@ class Mat {
         /** @private */
         this._cols = cols;
         /** @private */
-        this._innerStride = optional(innerStride, 1);
+        this._innerStride = innerStride;
         /** @private */
-        this._outerStride = optional(outerStride, this._rows);
+        this._outerStride = outerStride;
     }
 
     /**
@@ -267,8 +263,7 @@ class TypedMatFactory {
         return this.all(1, rows, cols);
     }
 
-    id(rows, cols) {
-        cols = optional(cols, rows);
+    id(rows, cols = rows) {
         const m = this.zeros(rows, cols);
 
         const dm = diag(m);
@@ -397,8 +392,7 @@ class TypedVecFactory {
         return new TypedVecFactory(m.type !== undefined && m.type instanceof Function ? m.type() : Array);
     }
 
-    from(data, n) {
-        n = optional(n, data.length);
+    from(data, n = data.length) {
         return this._factory.from(data, n, 1);
     }
 
@@ -568,8 +562,7 @@ class TypedDiagonalFactory {
     }
 
 
-    from(data, rows, cols) {
-        cols = optional(cols, rows);
+    from(data, rows, cols = rows) {
         const n = Math.min(rows, cols);
         const datat = new this._type(n);
         for (let i = 0; i < n; i++) {
@@ -586,8 +579,7 @@ class TypedDiagonalFactory {
         return Diagonal.new(data, rows, cols);
     }
 
-    all(v, rows, cols) {
-        cols = optional(cols, rows);
+    all(v, rows, cols = rows) {
         const n = Math.min(rows, cols);
         const data = new this._type(n);
         for (let i = 0; i < n; i++) {
@@ -977,24 +969,23 @@ class TriangularView {
  * @extends AbstractMat
  */
 class RowPermutation {
-    constructor(data, rows, cols, type) {
+    constructor(data, rows = data.length, cols = rows, type = currentDefaultType) {
         /** @private */
         this._data = data;
         /** @private */
-        this._rows = optional(rows, this._data.length);
+        this._rows = rows;
         /** @private */
-        this._cols = optional(cols, this._rows);
-        this._type = optional(type, currentDefaultType);
+        this._cols = cols;
+        this._type = type;
     }
 
     static new(data, rows, cols, type) {
         return new RowPermutation(data, rows, cols, type);
     }
 
-    at(i, j) {
+    at(i, j = 0) {
         // permute rows then map to identity
         i = this._data[i];
-        j = optional(j, 0);
 
         return i === j ? 1 : 0;
     }
@@ -1091,7 +1082,7 @@ class MinorView {
  * @extends AbstractMat
  */
 class PaddedView {
-    constructor(m, rows, cols, offDiagonalValue, diagonalValue) {
+    constructor(m, rows, cols, offDiagonalValue = 0, diagonalValue = 1) {
         /** @private */
         this._m = m;
         /** @private */
@@ -1103,9 +1094,9 @@ class PaddedView {
             throw new Error("Padded View needs to be at least as big as source");
         }
         /** @private */
-        this._offDiagonalValue = optional(offDiagonalValue, 0);
+        this._offDiagonalValue = offDiagonalValue;
         /** @private */
-        this._diagonalValue = optional(diagonalValue, 1);
+        this._diagonalValue = diagonalValue;
     }
 
     static new(m, rows, cols, offDiagonalValue, diagonalValue) {
@@ -1384,9 +1375,7 @@ function diag(m) {
  *
  * @see BlockView
  */
-function block(m, i, j, rows, cols) {
-    rows = optional(rows, m.rows() - i);
-    cols = optional(cols, m.cols() - j);
+function block(m, i, j, rows = m.rows() - i, cols = m.cols() - j) {
     return BlockView.new(m, i, j, rows, cols);
 }
 
@@ -1826,8 +1815,7 @@ function toArray(m) {
  * @param type - The type of the matrix
  * @returns {Diagonal} The identity matrix
  */
-function id(rows, cols, type) {
-    type = optional(type, currentDefaultType);
+function id(rows, cols, type = currentDefaultType) {
     return TypedDiagonalFactory.new(type).id(rows, cols);
 }
 
@@ -1840,8 +1828,7 @@ function id(rows, cols, type) {
  * @param type - The type of the matrix
  * @returns {Mat} The zero matrix
  */
-function zeros(rows, cols, type) {
-    type = optional(type, currentDefaultType);
+function zeros(rows, cols, type = currentDefaultType) {
     return TypedMatFactory.new(type).zeros(rows, cols);
 }
 
@@ -1854,8 +1841,7 @@ function zeros(rows, cols, type) {
  * @param type - The type of the matrix
  * @returns {Mat} The zero matrix
  */
-function rand(rows, cols, type) {
-    type = optional(type, currentDefaultType);
+function rand(rows, cols, type = currentDefaultType) {
     return TypedMatFactory.new(type).rand(rows, cols);
 }
 
@@ -1868,8 +1854,7 @@ function rand(rows, cols, type) {
  * @param type - The type of the matrix
  * @returns {Mat} The ones matrix
  */
-function ones(rows, cols, type) {
-    type = optional(type, currentDefaultType);
+function ones(rows, cols, type = currentDefaultType) {
     return TypedMatFactory.new(type).ones(rows, cols);
 }
 
@@ -1882,8 +1867,7 @@ function ones(rows, cols, type) {
  * @param type - The type of the matrix
  * @returns {Mat} An uninitialized matrix
  */
-function mat(rows, cols, type) {
-    type = optional(type, currentDefaultType);
+function mat(rows, cols, type = currentDefaultType) {
     return TypedMatFactory.new(type).uninitialized(rows, cols);
 }
 
@@ -1896,8 +1880,7 @@ function mat(rows, cols, type) {
  * @param {Object} [type] - The underlying type. Defaults to the current default type
  * @returns {Mat} A mat with a typed copy of the given data
  */
-function from(data, rows, cols, type) {
-    type = optional(type, currentDefaultType);
+function from(data, rows, cols, type = currentDefaultType) {
     return TypedMatFactory.new(type).copy(Mat.new(data, rows, cols));
 }
 
@@ -1908,9 +1891,8 @@ function from(data, rows, cols, type) {
  * @param {Object} [type] - The underlying type. Defaults to the current default type
  * @returns {Mat} A vector with a typed copy of the given data
  */
-function vecFrom(data, type) {
+function vecFrom(data, type = currentDefaultType) {
     const n = data.length;
-    type = optional(type, currentDefaultType);
     return TypedMatFactory.new(type).copy(Mat.new(data, n, 1));
 }
 
@@ -1922,8 +1904,7 @@ function vecFrom(data, type) {
  * @param type - The type of the matrix
  * @returns {Mat} An uninitialized vector
  */
-function vec(n, type) {
-    type = optional(type, currentDefaultType);
+function vec(n, type = currentDefaultType) {
     return TypedMatFactory.new(type).uninitialized(n, 1);
 }
 
@@ -4130,9 +4111,8 @@ function homogenize(points) {
  * @param [hcoord] - The homogeneous coordinate. If not given, will be equal to 1
  * @returns {AbstractMat} A homogeneous matrix
  */
-function hmat(mat, hcoord) {
+function hmat(mat, hcoord = 1) {
 
-    hcoord = optional(hcoord, 1);
     const result = setZero(similar(mat, mat.rows() + 1, mat.cols() + 1));
     insert(block(result, 0, 0, mat.rows(), mat.cols()), mat);
     result.set(hcoord, mat.rows(), mat.cols());
@@ -4147,12 +4127,10 @@ function hmat(mat, hcoord) {
  * @param [hcoord] - The homogeneous coordinate. If not given, will be equal to 1
  * @returns {AbstractMat} A homogeneous vector
  */
-function hvec(v, hcoord) {
+function hvec(v, hcoord = 1) {
     if (!isVec(v)) {
         throw new Error("Not a vector");
     }
-
-    hcoord = optional(hcoord, 1);
     const result = setZero(similar(v, v.rows() + 1));
     insert(subvec(result, 0, v.rows()), v);
     result.set(hcoord, v.rows());
@@ -4288,8 +4266,7 @@ function scaling(s) {
  * @param [eps] - Optional epsilon value, defaults to 1E-7
  * @returns {boolean} True, if both matrices are approximately equal, false otherwise
  */
-function approxEqual(a, b, eps) {
-    eps = optional(eps, 1E-7);
+function approxEqual(a, b, eps = 1E-7) {
 
     return norm(sub(a, b)) < eps;
 }
@@ -4301,9 +4278,7 @@ function approxEqual(a, b, eps) {
  * @param [eps] - Optional epsilon value, defaults to 1E-7
  * @returns {boolean} True, if the matrix is approximately zero, false otherwise
  */
-function approxZero(a, eps) {
-    eps = optional(eps, 1E-7);
-
+function approxZero(a, eps = 1E-7) {
     return norm(a) < eps;
 }
 
@@ -4315,9 +4290,8 @@ function approxZero(a, eps) {
  * @param [type] - The output type, will use the default type if not specified
  * @returns {AbstractMat} The cartesian vector
  */
-function spherical(theta, phi, r, type) {
+function spherical(theta, phi, r, type = currentDefaultType) {
     const st = Math.sin(theta);
-    type = optional(type, currentDefaultType);
 
     return TypedVecFactory.new(type).from([r * st * Math.cos(phi), r * st * Math.sin(phi), r * Math.cos(theta)]);
 }
