@@ -2694,9 +2694,8 @@ function hypot(a, b) {
     const absa = Math.abs(a);
     const absb = Math.abs(b);
 
-    const sqr = function (x) {
-        return x * x;
-    };
+    const sqr = x => x * x;
+
     if (absa > absb) {
 
         return absa * Math.sqrt(1.0 + sqr(absb / absa));
@@ -3543,6 +3542,949 @@ function chopSmallElements(d, f) {
         }
         d_i = d_ip1;
     }
+
+}
+//*****************************************************
+function isSymmetric(a, eps = 0.0) {
+    const n = a.rows();
+    // only square matrices are symmetric
+    if (n !== a.cols()) {
+        return false;
+    }
+    for (let j = 0; j < n; j++) {
+        for (let i = 0; i < n; i++) {
+            if (Math.abs(a.at(i, j) - a.at(j, i)) > eps) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+//*****************************************************
+/**
+ * Adapted from the public domain JAMA library (JAMA)
+ * @param {AbstractMat} V
+ * @param {AbstractMat} d
+ * @param {AbstractMat} e
+ */
+function tred2(V, d, e) {
+    const n = V.rows();
+    //  This is derived from the Algol procedures tred2 by
+    //  Bowdler, Martin, Reinsch, and Wilkinson, Handbook for
+    //  Auto. Comp., Vol.ii-Linear Algebra, and the corresponding
+    //  Fortran subroutine in EISPACK.
+
+    for (let j = 0; j < n; j++) {
+        d[j] = V.at(n - 1, j);
+    }
+
+    // Householder reduction to tridiagonal form.
+
+    for (let i = n - 1; i > 0; i--) {
+
+        // Scale to avoid under/overflow.
+
+        let scale = 0.0;
+        let h = 0.0;
+        for (let k = 0; k < i; k++) {
+            scale = scale + Math.abs(d[k]);
+        }
+        if (scale === 0.0) {
+            e[i] = d[i - 1];
+            for (let j = 0; j < i; j++) {
+                d[j] = V.at(i - 1, j);
+                V.set(0.0, i, j);
+                V.set(0.0, j, i);
+            }
+        } else {
+
+            // Generate Householder vector.
+
+            for (let k = 0; k < i; k++) {
+                d[k] /= scale;
+                h += d[k] * d[k];
+            }
+            let f = d[i - 1];
+            let g = Math.sqrt(h);
+            if (f > 0) {
+                g = -g;
+            }
+            e[i] = scale * g;
+            h = h - f * g;
+            d[i - 1] = f - g;
+            for (let j = 0; j < i; j++) {
+                e[j] = 0.0;
+            }
+
+            // Apply similarity transformation to remaining columns.
+
+            for (let j = 0; j < i; j++) {
+                f = d[j];
+                V.set(f, j, i);
+                g = e[j] + V.at(j, j) * f;
+                for (let k = j + 1; k <= i - 1; k++) {
+                    g += V.at(k, j) * d[k];
+                    e[k] += V.at(k, j) * f;
+                }
+                e[j] = g;
+            }
+            f = 0.0;
+            for (let j = 0; j < i; j++) {
+                e[j] /= h;
+                f += e[j] * d[j];
+            }
+            const hh = f / (h + h);
+            for (let j = 0; j < i; j++) {
+                e[j] -= hh * d[j];
+            }
+            for (let j = 0; j < i; j++) {
+                f = d[j];
+                g = e[j];
+                for (let k = j; k <= i - 1; k++) {
+                    V.set(V.at(k, j) - (f * e[k] + g * d[k]), k, j);
+                }
+                d[j] = V.at(i - 1, j);
+                V.set(0.0, i, j);
+            }
+        }
+        d[i] = h;
+    }
+
+    // Accumulate transformations.
+
+    for (let i = 0; i < n - 1; i++) {
+        V.set(V.at(i, i), n - 1, i);
+        V.set(1.0, i, i);
+        const h = d[i + 1];
+        if (h != 0.0) {
+            for (let k = 0; k <= i; k++) {
+                d[k] = V.at(k, i + 1) / h;
+            }
+            for (let j = 0; j <= i; j++) {
+                let g = 0.0;
+                for (let k = 0; k <= i; k++) {
+                    g += V.at(k, i + 1) * V.at(k, j);
+                }
+                for (let k = 0; k <= i; k++) {
+                    V.set(V.at(k, j) - g * d[k], k, j);
+                }
+            }
+        }
+        for (let k = 0; k <= i; k++) {
+            V.set(0.0, k, i + 1);
+        }
+    }
+    for (let j = 0; j < n; j++) {
+        d[j] = V.at(n - 1, j);
+        V.set(0.0, n - 1, j);
+    }
+    V.set(1.0, n - 1, n - 1);
+    e[0] = 0.0;
+}
+//*****************************************************
+/**
+ * Adapted from the public domain JAMA library (JAMA)
+ * @param {Number} xr Real part of x
+ * @param {Number} xi Imaginary part of x
+ * @param {Number} yr Real part of y
+ * @param {Number} yi Imaginary part of y
+ * @returns {Array} [r,i] The real and imaginary part of the division
+ */
+function cdiv(xr, xi, yr, yi) {
+    let r, d;
+    let cdivr, cdivi;
+    if (Math.abs(yr) > Math.abs(yi)) {
+        r = yi / yr;
+        d = yr + r * yi;
+        cdivr = (xr + r * xi) / d;
+        cdivi = (xi - r * xr) / d;
+    } else {
+        r = yr / yi;
+        d = yi + r * yr;
+        cdivr = (r * xr + xi) / d;
+        cdivi = (r * xi - xr) / d;
+    }
+
+    return [cdivr, cdivi];
+}
+//*****************************************************
+/**
+ * Adapted from the public domain JAMA library (JAMA)
+ * @param {AbstractMat} V
+ * @param {AbstractMat} H
+ * @param {AbstractMat} d
+ * @param {AbstractMat} e
+ */
+function hqr2(V, H, d, e) {
+    const nn = V.rows();
+    let n = nn - 1;
+    const low = 0;
+    const high = nn - 1;
+    const eps = Math.pow(2.0, -52.0);
+    let exshift = 0.0;
+    let p = 0, q = 0, r = 0, s = 0, z = 0, t, w, x, y;
+
+    // Store roots isolated by balanc and compute matrix norm
+
+    let norm = 0.0;
+    for (let i = 0; i < nn; i++) {
+        if (i < low | i > high) {
+            d[i] = H.at(i, i);
+            e[i] = 0.0;
+        }
+        for (let j = Math.max(i - 1, 0); j < nn; j++) {
+            norm = norm + Math.abs(H.at(i, j));
+        }
+    }
+
+    // Outer loop over eigenvalue index
+
+    let iter = 0;
+    while (n >= low) {
+
+        // Look for single small sub-diagonal element
+
+        let l = n;
+        while (l > low) {
+            s = Math.abs(H.at(l - 1, l - 1)) + Math.abs(H.at(l, l));
+            if (s === 0.0) {
+                s = norm;
+            }
+            if (Math.abs(H.at(l, l - 1)) < eps * s) {
+                break;
+            }
+            l--;
+        }
+
+        // Check for convergence
+        // One root found
+
+        if (l === n) {
+            H.set(H.at(n, n) + exshift, n, n);
+            d[n] = H.at(n, n);
+            e[n] = 0.0;
+            n--;
+            iter = 0;
+
+            // Two roots found
+
+        } else if (l === n - 1) {
+            w = H.at(n, n - 1) * H.at(n - 1, n);
+            p = (H.at(n - 1, n - 1) - H.at(n, n)) / 2.0;
+            q = p * p + w;
+            z = Math.sqrt(Math.abs(q));
+            H.set(H.at(n, n) + exshift, n, n);
+            H.set(H.at(n - 1, n - 1) + exshift, n - 1, n - 1);
+            x = H.at(n, n);
+
+            // Real pair
+
+            if (q >= 0) {
+                if (p >= 0) {
+                    z = p + z;
+                } else {
+                    z = p - z;
+                }
+                d[n - 1] = x + z;
+                d[n] = d[n - 1];
+                if (z !== 0.0) {
+                    d[n] = x - w / z;
+                }
+                e[n - 1] = 0.0;
+                e[n] = 0.0;
+                x = H.at(n, n - 1);
+                s = Math.abs(x) + Math.abs(z);
+                p = x / s;
+                q = z / s;
+                r = Math.sqrt(p * p + q * q);
+                p = p / r;
+                q = q / r;
+
+                // Row modification
+
+                for (let j = n - 1; j < nn; j++) {
+                    z = H.at(n - 1, j);
+                    H.set(q * z + p * H.at(n, j), n - 1, j);
+                    H.set(q * H.at(n, j) - p * z, n, j);
+                }
+
+                // Column modification
+
+                for (let i = 0; i <= n; i++) {
+                    z = H.at(i, n - 1);
+                    H.set(q * z + p * H.at(i, n), i, n - 1);
+                    H.set(q * H.at(i, n) - p * z, i, n);
+                }
+
+                // Accumulate transformations
+
+                for (let i = low; i <= high; i++) {
+                    z = V.at(i, n - 1);
+                    V.set(q * z + p * V.at(i, n), i, n - 1);
+                    V.set(q * V.at(i, n) - p * z, i, n);
+                }
+
+                // Complex pair
+
+            } else {
+                d[n - 1] = x + p;
+                d[n] = x + p;
+                e[n - 1] = z;
+                e[n] = -z;
+            }
+            n = n - 2;
+            iter = 0;
+
+            // No convergence yet
+
+        } else {
+
+            // Form shift
+
+            x = H.at(n, n);
+            y = 0.0;
+            w = 0.0;
+            if (l < n) {
+                y = H.at(n - 1, n - 1);
+                w = H.at(n, n - 1) * H.at(n - 1, n);
+            }
+
+            // Wilkinson's original ad hoc shift
+
+            if (iter == 10) {
+                exshift += x;
+                for (let i = low; i <= n; i++) {
+                    H.set(H.at(i, i) - x, i, i);
+                }
+                s = Math.abs(H.at(n, n - 1)) + Math.abs(H.at(n - 1, n - 2));
+                x = y = 0.75 * s;
+                w = -0.4375 * s * s;
+            }
+
+            // MATLAB's new ad hoc shift
+
+            if (iter === 30) {
+                s = (y - x) / 2.0;
+                s = s * s + w;
+                if (s > 0) {
+                    s = Math.sqrt(s);
+                    if (y < x) {
+                        s = -s;
+                    }
+                    s = x - w / ((y - x) / 2.0 + s);
+                    for (let i = low; i <= n; i++) {
+                        H.set(H.at(i, i) - s, i, i);
+                    }
+                    exshift += s;
+                    x = y = w = 0.964;
+                }
+            }
+
+            iter = iter + 1;   // (Could check iteration count here.)
+
+            // Look for two consecutive small sub-diagonal elements
+
+            let m = n - 2;
+            while (m >= l) {
+                z = H.at(m, m);
+                r = x - z;
+                s = y - z;
+                p = (r * s - w) / H.at(m + 1, m) + H.at(m, m + 1);
+                q = H.at(m + 1, m + 1) - z - r - s;
+                r = H.at(m + 2, m + 1);
+                s = Math.abs(p) + Math.abs(q) + Math.abs(r);
+                p = p / s;
+                q = q / s;
+                r = r / s;
+                if (m === l) {
+                    break;
+                }
+                if (Math.abs(H.at(m, m - 1)) * (Math.abs(q) + Math.abs(r)) <
+                    eps * (Math.abs(p) * (Math.abs(H.at(m - 1, m - 1)) + Math.abs(z) +
+                        Math.abs(H.at(m + 1, m + 1))))) {
+                    break;
+                }
+                m--;
+            }
+
+            for (let i = m + 2; i <= n; i++) {
+                H.set(0.0, i, i - 2);
+                if (i > m + 2) {
+                    H.set(0.0, i, i - 3);
+                }
+            }
+
+            // Double QR step involving rows l:n and columns m:n
+
+
+            for (let k = m; k <= n - 1; k++) {
+                const notlast = (k !== n - 1);
+                if (k != m) {
+                    p = H.at(k, k - 1);
+                    q = H.at(k + 1, k - 1);
+                    r = (notlast ? H.at(k + 2, k - 1) : 0.0);
+                    x = Math.abs(p) + Math.abs(q) + Math.abs(r);
+                    if (x === 0.0) {
+                        continue;
+                    }
+                    p = p / x;
+                    q = q / x;
+                    r = r / x;
+                }
+
+                s = Math.sqrt(p * p + q * q + r * r);
+                if (p < 0) {
+                    s = -s;
+                }
+                if (s != 0) {
+                    if (k != m) {
+                        H.set(-s * x, k, k - 1);
+                    } else if (l != m) {
+                        H.set(-H.at(k, k - 1), k, k - 1);
+                    }
+                    p = p + s;
+                    x = p / s;
+                    y = q / s;
+                    z = r / s;
+                    q = q / p;
+                    r = r / p;
+
+                    // Row modification
+
+                    for (let j = k; j < nn; j++) {
+                        p = H.at(k, j) + q * H.at(k + 1, j);
+                        if (notlast) {
+                            p = p + r * H.at(k + 2, j);
+                            H.set(H.at(k + 2, j) - p * z, k + 2, j);
+                        }
+                        H.set(H.at(k, j) - p * x, k, j);
+                        H.set(H.at(k + 1, j) - p * y, k + 1, j);
+                    }
+
+                    // Column modification
+
+                    for (let i = 0; i <= Math.min(n, k + 3); i++) {
+                        p = x * H.at(i, k) + y * H.at(i, k + 1);
+                        if (notlast) {
+                            p = p + z * H.at(i, k + 2);
+                            H.set(H.at(i, k + 2) - p * r, i, k + 2);
+                        }
+                        H.set(H.at(i, k) - p, i, k);
+                        H.set(H.at(i, k + 1) - p * q, i, k + 1);
+                    }
+
+                    // Accumulate transformations
+
+                    for (let i = low; i <= high; i++) {
+                        p = x * V.at(i, k) + y * V.at(i, k + 1);
+                        if (notlast) {
+                            p = p + z * V.at(i, k + 2);
+                            V.set(V.at(i, k + 2) - p * r, i, k + 2);
+                        }
+                        V.set(V.at(i, k) - p, i, k);
+                        V.set(V.at(i, k + 1) - p * q, i, k + 1);
+                    }
+                }  // (s != 0)
+            }  // k loop
+        }  // check convergence
+    }  // while (n >= low)
+
+    // Backsubstitute to find vectors of upper triangular form
+
+    if (norm === 0.0) {
+        return;
+    }
+
+    for (n = nn - 1; n >= 0; n--) {
+        p = d[n];
+        q = e[n];
+
+        // Real vector
+
+        if (q == 0) {
+            let l = n;
+            H.set(1.0, n, n);
+            for (let i = n - 1; i >= 0; i--) {
+                w = H.at(i, i) - p;
+                r = 0.0;
+                for (let j = l; j <= n; j++) {
+                    r = r + H.at(i, j) * H.at(j, n);
+                }
+                if (e[i] < 0.0) {
+                    z = w;
+                    s = r;
+                } else {
+                    l = i;
+                    if (e[i] === 0.0) {
+                        if (w !== 0.0) {
+                            H.set(-r / w, i, n);
+                        } else {
+                            H.set(-r / (eps * norm), i, n);
+                        }
+
+                        // Solve real equations
+
+                    } else {
+                        x = H.at(i, i + 1);
+                        y = H.at(i + 1, i);
+                        q = (d[i] - p) * (d[i] - p) + e[i] * e[i];
+                        t = (x * s - z * r) / q;
+                        H.set(t, i, n);
+                        if (Math.abs(x) > Math.abs(z)) {
+                            H.set((-r - w * t) / x, i + 1, n);
+                        } else {
+                            H.set((-s - y * t) / z, i + 1, n);
+                        }
+                    }
+
+                    // Overflow control
+
+                    t = Math.abs(H.at(i, n));
+                    if ((eps * t) * t > 1) {
+                        for (let j = i; j <= n; j++) {
+                            H.set(H[j][n] / t, j, n);
+                        }
+                    }
+                }
+            }
+
+            // Complex vector
+
+        } else if (q < 0) {
+            let l = n - 1;
+
+            // Last vector component imaginary so matrix is triangular
+
+            if (Math.abs(H.at(n, n - 1)) > Math.abs(H.at(n - 1, n))) {
+                H.set(q / H.at(n, n - 1), n - 1, n - 1);
+                H.set(-(H.at(n, n) - p) / H.at(n, n - 1), n - 1, n);
+            } else {
+                const [cdivr, cdivi] = cdiv(0.0, -H.at(n - 1, n), H.at(n - 1, n - 1) - p, q);
+                H.set(cdivr, n - 1, n - 1);
+                H.set(cdivi, n - 1, n);
+            }
+            H.set(0.0, n, n - 1);
+            H.set(1.0, n, n);
+            for (let i = n - 2; i >= 0; i--) {
+                let ra, sa, vr, vi;
+                ra = 0.0;
+                sa = 0.0;
+                for (let j = l; j <= n; j++) {
+                    ra = ra + H.at(i, j) * H.at(j, n - 1);
+                    sa = sa + H.at(i, j) * H.at(j, n);
+                }
+                w = H.at(i, i) - p;
+
+                if (e[i] < 0.0) {
+                    z = w;
+                    r = ra;
+                    s = sa;
+                } else {
+                    l = i;
+                    if (e[i] == 0) {
+                        const [cdivr, cdivi] = cdiv(-ra, -sa, w, q);
+                        H.set(cdivr, i, n - 1);
+                        H.set(cdivi, i, n);
+                    } else {
+
+                        // Solve complex equations
+
+                        x = H.at(i, i + 1);
+                        y = H.at(i + 1, i);
+                        vr = (d[i] - p) * (d[i] - p) + e[i] * e[i] - q * q;
+                        vi = (d[i] - p) * 2.0 * q;
+                        if (vr === 0.0 & vi === 0.0) {
+                            vr = eps * norm * (Math.abs(w) + Math.abs(q) +
+                                Math.abs(x) + Math.abs(y) + Math.abs(z));
+                        }
+                        const [cdivr, cdivi] = cdiv(x * r - z * ra + q * sa, x * s - z * sa - q * ra, vr, vi);
+                        H.set(cdivr, i, n - 1);
+                        H.set(cdivi, i, n);
+                        if (Math.abs(x) > (Math.abs(z) + Math.abs(q))) {
+                            H.set((-ra - w * H.at(i, n - 1) + q * H.at(i, n)) / x, i + 1, n - 1);
+                            H.set((-sa - w * H.at(i, n) - q * H.at(i, n - 1)) / x, i + 1, n);
+                        } else {
+                            const [cdivr, cdivi] = cdiv(-r - y * H[i][n - 1], -s - y * H[i][n], z, q);
+                            H.set(cdivr, i + 1, n - 1);
+                            H.set(cdivi, i + 1, n);
+                        }
+                    }
+
+                    // Overflow control
+
+                    t = Math.max(Math.abs(H.at(i, n - 1)), Math.abs(H.at(i, n)));
+                    if ((eps * t) * t > 1) {
+                        for (let j = i; j <= n; j++) {
+                            H.set(H.at(j, n - 1) / t, j, n - 1);
+                            H.set(H.at(j, n) / t, j, n);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Vectors of isolated roots
+
+    for (let i = 0; i < nn; i++) {
+        if (i < low | i > high) {
+            for (let j = i; j < nn; j++) {
+                V.set(H.at(i, j), i, j);
+            }
+        }
+    }
+
+    // Back transformation to get eigenvectors of original matrix
+
+    for (let j = nn - 1; j >= low; j--) {
+        for (let i = low; i <= high; i++) {
+            z = 0.0;
+            for (let k = low; k <= Math.min(j, high); k++) {
+                z = z + V.at(i, k) * H.at(k, j);
+            }
+            V.set(z, i, j);
+        }
+    }
+}
+//*****************************************************
+/**
+ * Adapted from the public domain JAMA library (JAMA)
+ * @param {AbstractMat} V
+ * @param {AbstractMat} d
+ * @param {AbstractMat} e
+ */
+function tq12(V, d, e) {
+    const n = V.rows();
+
+    for (let i = 1; i < n; i++) {
+        e[i - 1] = e[i];
+    }
+    e[n - 1] = 0.0;
+
+    let f = 0.0;
+    let tst1 = 0.0;
+    let eps = Math.pow(2.0, -52.0);
+    for (let l = 0; l < n; l++) {
+
+        // Find small subdiagonal element
+
+        tst1 = Math.max(tst1, Math.abs(d[l]) + Math.abs(e[l]));
+        let m = l;
+        while (m < n) {
+            if (Math.abs(e[m]) <= eps * tst1) {
+                break;
+            }
+            m++;
+        }
+
+        // If m == l, d[l] is an eigenvalue,
+        // otherwise, iterate.
+
+        if (m > l) {
+            let iter = 0;
+            do {
+                iter = iter + 1;  // (Could check iteration count here.)
+
+                // Compute implicit shift
+
+                let g = d[l];
+                let p = (d[l + 1] - g) / (2.0 * e[l]);
+                let r = hypot(p, 1.0);
+                if (p < 0) {
+                    r = -r;
+                }
+                d[l] = e[l] / (p + r);
+                d[l + 1] = e[l] * (p + r);
+                const dl1 = d[l + 1];
+                let h = g - d[l];
+                for (let i = l + 2; i < n; i++) {
+                    d[i] -= h;
+                }
+                f = f + h;
+
+                // Implicit QL transformation.
+
+                p = d[m];
+                let c = 1.0;
+                let c2 = c;
+                let c3 = c;
+                const el1 = e[l + 1];
+                let s = 0.0;
+                let s2 = 0.0;
+                for (let i = m - 1; i >= l; i--) {
+                    c3 = c2;
+                    c2 = c;
+                    s2 = s;
+                    g = c * e[i];
+                    h = c * p;
+                    r = hypot(p, e[i]);
+                    e[i + 1] = s * r;
+                    s = e[i] / r;
+                    c = p / r;
+                    p = c * d[i] - s * g;
+                    d[i + 1] = h + s * (c * g + s * d[i]);
+
+                    // Accumulate transformation.
+
+                    for (let k = 0; k < n; k++) {
+                        h = V.at(k, i + 1);
+                        V.set(s * V.at(k, i) + c * h, k, i + 1);
+                        V.set(c * V.at(k, i) - s * h, k, i);
+                    }
+                }
+                p = -s * s2 * c3 * el1 * e[l] / dl1;
+                e[l] = s * p;
+                d[l] = c * p;
+
+                // Check for convergence.
+
+            } while (Math.abs(e[l]) > eps * tst1);
+        }
+        d[l] = d[l] + f;
+        e[l] = 0.0;
+    }
+
+    // Sort eigenvalues and corresponding vectors.
+
+    for (let i = 0; i < n - 1; i++) {
+        let k = i;
+        let p = d[i];
+        for (let j = i + 1; j < n; j++) {
+            if (d[j] < p) {
+                k = j;
+                p = d[j];
+            }
+        }
+        if (k != i) {
+            d[k] = d[i];
+            d[i] = p;
+            for (let j = 0; j < n; j++) {
+                p = V.at(j, i);
+                V.set(V.at(j, k), j, i);
+                V.set(p, j, k);
+            }
+        }
+    }
+}
+
+//*****************************************************
+/**
+ * Adapted from the public domain JAMA library (JAMA)
+ * @param {AbstractMat} V
+ * @param {AbstractMat} H
+ */
+function orthes(V, H) {
+    const n = V.rows();
+    const low = 0;
+    const high = n - 1;
+    const type = V.type();
+    const ort = new type(n);
+
+
+    for (let m = low + 1; m <= high - 1; m++) {
+
+        // Scale column.
+
+        let scale = 0.0;
+        for (let i = m; i <= high; i++) {
+            scale = scale + Math.abs(H.at(i, m - 1));
+        }
+        if (scale !== 0.0) {
+
+            // Compute Householder transformation.
+
+            let h = 0.0;
+            for (let i = high; i >= m; i--) {
+                ort[i] = H.at(i, m - 1) / scale;
+                h += ort[i] * ort[i];
+            }
+            let g = Math.sqrt(h);
+            if (ort[m] > 0) {
+                g = -g;
+            }
+            h = h - ort[m] * g;
+            ort[m] = ort[m] - g;
+
+            // Apply Householder similarity transformation
+            // H = (I-u*u'/h)*H*(I-u*u')/h)
+
+            for (let j = m; j < n; j++) {
+                let f = 0.0;
+                for (let i = high; i >= m; i--) {
+                    f += ort[i] * H.at(i, j);
+                }
+                f = f / h;
+                for (let i = m; i <= high; i++) {
+                    H.set(H.at(i, j) - f * ort[i], i, j);
+                }
+            }
+
+            for (let i = 0; i <= high; i++) {
+                let f = 0.0;
+                for (let j = high; j >= m; j--) {
+                    f += ort[j] * H.at(i, j);
+                }
+                f = f / h;
+                for (let j = m; j <= high; j++) {
+                    H.set(H.at(i, j) - f * ort[j], i, j);
+                }
+            }
+            ort[m] = scale * ort[m];
+            H.set(scale * g, m, m - 1);
+        }
+    }
+
+    // Accumulate transformations (Algol's ortran).
+
+    for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n; j++) {
+            V.set(i === j ? 1.0 : 0.0, i, j);
+        }
+    }
+
+    for (let m = high - 1; m >= low + 1; m--) {
+        if (H.at(m, m - 1) !== 0.0) {
+            for (let i = m + 1; i <= high; i++) {
+                ort[i] = H.at(i, m - 1);
+            }
+            for (let j = m; j <= high; j++) {
+                let g = 0.0;
+                for (let i = m; i <= high; i++) {
+                    g += ort[i] * V.at(i, j);
+                }
+                // Double division avoids possible underflow
+                g = (g / ort[m]) / H.at(m, m - 1);
+                for (let i = m; i <= high; i++) {
+                    V.set(V.at(i, j) + g * ort[i], i, j);
+                }
+            }
+        }
+    }
+}
+
+//*****************************************************
+/**
+ * Stores the Eigen Decomposition of a matrix: A*V = V*D
+ * For a symmetric matrix, the eigenvalues are all real and D is orthogonal.
+ * For a non-symmetric matrix, V is block-diagonal and V might be singular.
+ */
+class Eigen {
+
+    /**
+     * Construct a new Eigen object
+     * @param {AbstractMat} V The Eigenvector matrix
+     * @param {Array | TypedArray} d The real part of the eigenvalues
+     * @param {Array | TypedArray} e The imaginary part of the eigenvalues
+     */
+    constructor(V, d, e) {
+        this.V = V;
+        this.d = d;
+        this.e = e;
+    }
+
+    /**
+     * Construct a new Eigen object
+     * @param {AbstractMat} V The Eigenvector matrix
+     * @param {Array | TypedArray} d The real part of the eigenvalues
+     * @param {Array | TypedArray} e The imaginary part of the eigenvalues
+     * @returns {Eigen} A new Eigen object
+     */
+    static new(V, d, e) {
+        return new Eigen(V, d, e);
+    }
+
+    /**
+     * Computes the eigenvalue decomposition of a matrix
+     * @param {AbstractMat} a The input matrix
+     * @returns {Eigen} The eigenvalue decomposition
+     */
+    static compute(a) {
+        return computeEigen(a);
+    }
+
+    /**
+     * @returns {AbstractMat} The eigenvector matrix
+     */
+    getV() {
+        return this.V;
+    }
+
+    /**
+     * The real part of the eigenvalues: real(lambda_i) for i=1:n
+     * @returns {Array | TypedArray} The real eigenvalues
+     */
+    getRealEigenvalues() {
+        return this.d;
+    }
+    /**
+      * The imaginary part of the eigenvalues: imag(lambda_i) for i=1:n
+      * @returns {Array | TypedArray} The imaginary eigenvalues
+      */
+    getImaginaryEigenvalues() {
+        return this.e;
+    }
+
+    /**
+     * Returns the eigenvalue matrix
+     * For symmetric matrices, this will be diagonal, otherwise block-diagonal
+     * @returns {AbstractMat} The eigenvalue matrix
+     */
+    getD() {
+        const D = setZero(similar(this.V));
+        const d = this.d;
+        const e = this.e;
+        const n = d.length;
+        insert(diag(D), VecF32.from(d));
+        for (let i = 0; i < n; i++) {
+            if (e[i] > 0) {
+                D.set(e[i], i, i + 1);
+            } else if (e[i] < 0) {
+                D.set(e[i], i, i - 1);
+            }
+        }
+        return D;
+    }
+}
+//*****************************************************
+
+/**
+ * Compute Eigenvalue decomposition of a matrix
+ * This function will adapt to symmetric and non-symmetric matrices.
+ * For more information about the result @see Eigen
+ * Adapted from the public domain JAMA library (JAMA)
+ * @returns {Eigen} The eigenvalue decomposition
+ */
+function computeEigen(a) {
+    const n = a.cols();
+    if (n !== a.rows()) {
+        throw new Error("Eigenvalues only defined for square matrices");
+    }
+
+    const type = a.type();
+    const d = new type(n);
+    const e = new type(n);
+
+    // check for symmetry
+    if (isSymmetric(a)) {
+        const V = copy(a);
+
+        // tridiagonalize
+        tred2(V, d, e);
+        // diagonalize
+        tq12(V, d, e);
+        return Eigen.new(V, d, e);
+    }
+    else {
+        const V = similar(a);
+        const H = copy(a);
+
+        orthes(V, H);
+
+        hqr2(V, H, d, e);
+        return Eigen.new(V, d, e);
+    }
+
 
 }
 
@@ -4502,6 +5444,9 @@ export {
     cond,
     computePLUD,
     computeSVD,
+    SVD,
+    computeEigen,
+    Eigen,
     computeUBVD,
     unpackUBV,
     solve,
@@ -4535,6 +5480,7 @@ export {
     spherical,
     cartesianToSpherical,
     permuteRows,
+    isSymmetric,
     X, Y, Z,
     Xh, Yh, Zh
 };
