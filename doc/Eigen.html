@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Class: SVD</title>
+    <title>JSDoc: Class: Eigen</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Class: SVD</h1>
+    <h1 class="page-title">Class: Eigen</h1>
 
     
 
@@ -28,9 +28,11 @@
 
 <header>
     
-        <h2><span class="attribs"><span class="type-signature"></span></span>SVD<span class="signature">(U, S, V)</span><span class="type-signature"></span></h2>
+        <h2><span class="attribs"><span class="type-signature"></span></span>Eigen<span class="signature">(V, d, e)</span><span class="type-signature"></span></h2>
         
-            <div class="class-description">A singular value decomposition U * S * V^T</div>
+            <div class="class-description">Stores the Eigen Decomposition of a matrix: A*V = V*D
+For a symmetric matrix, the eigenvalues are all real and D is orthogonal.
+For a non-symmetric matrix, V is block-diagonal and V might be singular.</div>
         
     
 </header>
@@ -45,12 +47,16 @@
     
 
     
-    <h4 class="name" id="SVD"><span class="type-signature"></span>new SVD<span class="signature">(U, S, V)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="Eigen"><span class="type-signature"></span>new Eigen<span class="signature">(V, d, e)</span><span class="type-signature"></span></h4>
     
 
     
 
 
+
+<div class="description">
+    Construct a new Eigen object
+</div>
 
 
 
@@ -85,52 +91,6 @@
 
         <tr>
             
-                <td class="name"><code>U</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="global.html#AbstractMat">AbstractMat</a></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">The U matrix</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>S</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="global.html#AbstractMat">AbstractMat</a></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">The singular values in a vector</td>
-        </tr>
-
-    
-
-        <tr>
-            
                 <td class="name"><code>V</code></td>
             
 
@@ -147,7 +107,59 @@
 
             
 
-            <td class="description last">The V matrix</td>
+            <td class="description last">The Eigenvector matrix</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>d</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array</span>
+|
+
+<span class="param-type">TypedArray</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">The real part of the eigenvalues</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>e</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array</span>
+|
+
+<span class="param-type">TypedArray</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">The imaginary part of the eigenvalues</td>
         </tr>
 
     
@@ -188,7 +200,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="jsmatrix.js.html">jsmatrix.js</a>, <a href="jsmatrix.js.html#line4521">line 4521</a>
+        <a href="jsmatrix.js.html">jsmatrix.js</a>, <a href="jsmatrix.js.html#line4398">line 4398</a>
     </li></ul></dd>
     
 
@@ -234,258 +246,6 @@
     
 
     
-        <h3 class="subsection-title">Members</h3>
-
-        
-            
-<h4 class="name" id="S"><span class="type-signature"></span>S<span class="type-signature"></span></h4>
-
-
-
-
-<div class="description">
-    S matrix represented as a vector containing the singular values
-</div>
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="jsmatrix.js.html">jsmatrix.js</a>, <a href="jsmatrix.js.html#line4525">line 4525</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-        
-            
-<h4 class="name" id="U"><span class="type-signature"></span>U<span class="type-signature"></span></h4>
-
-
-
-
-<div class="description">
-    U
-</div>
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="jsmatrix.js.html">jsmatrix.js</a>, <a href="jsmatrix.js.html#line4523">line 4523</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-        
-            
-<h4 class="name" id="V"><span class="type-signature"></span>V<span class="type-signature"></span></h4>
-
-
-
-
-<div class="description">
-    V
-</div>
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="jsmatrix.js.html">jsmatrix.js</a>, <a href="jsmatrix.js.html#line4527">line 4527</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-        
-            
-<h4 class="name" id="Vt"><span class="type-signature"></span>Vt<span class="type-signature"></span></h4>
-
-
-
-
-<div class="description">
-    V^T
-</div>
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="jsmatrix.js.html">jsmatrix.js</a>, <a href="jsmatrix.js.html#line4529">line 4529</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-        
-    
 
     
         <h3 class="subsection-title">Methods</h3>
@@ -496,7 +256,7 @@
     
 
     
-    <h4 class="name" id=".new"><span class="type-signature">(static) </span>new<span class="signature">(U, S, V)</span><span class="type-signature"> &rarr; {<a href="SVD.html">SVD</a>}</span></h4>
+    <h4 class="name" id=".compute"><span class="type-signature">(static) </span>compute<span class="signature">(a)</span><span class="type-signature"> &rarr; {<a href="Eigen.html">Eigen</a>}</span></h4>
     
 
     
@@ -504,7 +264,7 @@
 
 
 <div class="description">
-    Creates a new SVD object
+    Computes the eigenvalue decomposition of a matrix
 </div>
 
 
@@ -540,7 +300,7 @@
 
         <tr>
             
-                <td class="name"><code>U</code></td>
+                <td class="name"><code>a</code></td>
             
 
             <td class="type">
@@ -556,32 +316,145 @@
 
             
 
-            <td class="description last">The U matrix</td>
+            <td class="description last">The input matrix</td>
         </tr>
 
     
+    </tbody>
+</table>
 
-        <tr>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="jsmatrix.js.html">jsmatrix.js</a>, <a href="jsmatrix.js.html#line4420">line 4420</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    The eigenvalue decomposition
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="Eigen.html">Eigen</a></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
             
-                <td class="name"><code>S</code></td>
-            
 
-            <td class="type">
-            
-                
-<span class="param-type"><a href="global.html#AbstractMat">AbstractMat</a></span>
+    
+
+    
+    <h4 class="name" id=".new"><span class="type-signature">(static) </span>new<span class="signature">(V, d, e)</span><span class="type-signature"> &rarr; {<a href="Eigen.html">Eigen</a>}</span></h4>
+    
+
+    
 
 
-            
-            </td>
 
-            
+<div class="description">
+    Construct a new Eigen object
+</div>
 
-            
 
-            <td class="description last">The singular values in a vector</td>
-        </tr>
 
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
     
 
         <tr>
@@ -602,7 +475,59 @@
 
             
 
-            <td class="description last">The V matrix</td>
+            <td class="description last">The Eigenvector matrix</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>d</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array</span>
+|
+
+<span class="param-type">TypedArray</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">The real part of the eigenvalues</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>e</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array</span>
+|
+
+<span class="param-type">TypedArray</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">The imaginary part of the eigenvalues</td>
         </tr>
 
     
@@ -643,19 +568,12 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="jsmatrix.js.html">jsmatrix.js</a>, <a href="jsmatrix.js.html#line4542">line 4542</a>
+        <a href="jsmatrix.js.html">jsmatrix.js</a>, <a href="jsmatrix.js.html#line4411">line 4411</a>
     </li></ul></dd>
     
 
     
 
-    
-    <dt class="tag-see">See:</dt>
-    <dd class="tag-see">
-        <ul>
-            <li>constructor</li>
-        </ul>
-    </dd>
     
 
     
@@ -679,7 +597,7 @@
 
         
 <div class="param-desc">
-    A new SVD object
+    A new Eigen object
 </div>
 
 
@@ -690,7 +608,7 @@
     </dt>
     <dd>
         
-<span class="param-type"><a href="SVD.html">SVD</a></span>
+<span class="param-type"><a href="Eigen.html">Eigen</a></span>
 
 
     </dd>
@@ -708,7 +626,7 @@
     
 
     
-    <h4 class="name" id="inv"><span class="type-signature"></span>inv<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="SVD.html">SVD</a>}</span></h4>
+    <h4 class="name" id="getD"><span class="type-signature"></span>getD<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="global.html#AbstractMat">AbstractMat</a>}</span></h4>
     
 
     
@@ -716,8 +634,8 @@
 
 
 <div class="description">
-    Creates the pseudo inverse of this SVD
-If the matrix has full rank, this will equal the inverse
+    Returns the eigenvalue matrix
+For symmetric matrices, this will be diagonal, otherwise block-diagonal
 </div>
 
 
@@ -761,7 +679,7 @@ If the matrix has full rank, this will equal the inverse
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="jsmatrix.js.html">jsmatrix.js</a>, <a href="jsmatrix.js.html#line4587">line 4587</a>
+        <a href="jsmatrix.js.html">jsmatrix.js</a>, <a href="jsmatrix.js.html#line4451">line 4451</a>
     </li></ul></dd>
     
 
@@ -790,7 +708,7 @@ If the matrix has full rank, this will equal the inverse
 
         
 <div class="param-desc">
-    The SVD of the inverse
+    The eigenvalue matrix
 </div>
 
 
@@ -801,7 +719,7 @@ If the matrix has full rank, this will equal the inverse
     </dt>
     <dd>
         
-<span class="param-type"><a href="SVD.html">SVD</a></span>
+<span class="param-type"><a href="global.html#AbstractMat">AbstractMat</a></span>
 
 
     </dd>
@@ -819,7 +737,7 @@ If the matrix has full rank, this will equal the inverse
     
 
     
-    <h4 class="name" id="solve"><span class="type-signature"></span>solve<span class="signature">(b, out<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="getImaginaryEigenvalues"><span class="type-signature"></span>getImaginaryEigenvalues<span class="signature">()</span><span class="type-signature"> &rarr; {Array|TypedArray}</span></h4>
     
 
     
@@ -827,7 +745,7 @@ If the matrix has full rank, this will equal the inverse
 
 
 <div class="description">
-    Finds the vector x that minimizes ||Ax - b||_2, where A is the matrix decomposed into this SVD.
+    The imaginary part of the eigenvalues: imag(lambda_i) for i=1:n
 </div>
 
 
@@ -836,98 +754,6 @@ If the matrix has full rank, this will equal the inverse
 
 
 
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-        <th>Attributes</th>
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>b</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="global.html#AbstractMat">AbstractMat</a></span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last">The vector to solve for</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>out</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="global.html#AbstractMat">AbstractMat</a></span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last">Optional output vector</td>
-        </tr>
-
-    
-    </tbody>
-</table>
 
 
 
@@ -963,163 +789,7 @@ If the matrix has full rank, this will equal the inverse
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="jsmatrix.js.html">jsmatrix.js</a>, <a href="jsmatrix.js.html#line4552">line 4552</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-    <dt class="tag-see">See:</dt>
-    <dd class="tag-see">
-        <ul>
-            <li><a href="global.html#solveSVD">solveSVD</a></li>
-        </ul>
-    </dd>
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="toMat"><span class="type-signature"></span>toMat<span class="signature">(out<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {<a href="global.html#AbstractMat">AbstractMat</a>}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Computes U * S * V^T and produces the matrix this decomposition represents
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-        <th>Attributes</th>
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>out</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="global.html#AbstractMat">AbstractMat</a></span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last">The output matrix. If not specified, a new matrix will be created</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="jsmatrix.js.html">jsmatrix.js</a>, <a href="jsmatrix.js.html#line4562">line 4562</a>
+        <a href="jsmatrix.js.html">jsmatrix.js</a>, <a href="jsmatrix.js.html#line4442">line 4442</a>
     </li></ul></dd>
     
 
@@ -1148,7 +818,229 @@ If the matrix has full rank, this will equal the inverse
 
         
 <div class="param-desc">
-    The result U * S * V^T
+    The imaginary eigenvalues
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Array</span>
+|
+
+<span class="param-type">TypedArray</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="getRealEigenvalues"><span class="type-signature"></span>getRealEigenvalues<span class="signature">()</span><span class="type-signature"> &rarr; {Array|TypedArray}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    The real part of the eigenvalues: real(lambda_i) for i=1:n
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="jsmatrix.js.html">jsmatrix.js</a>, <a href="jsmatrix.js.html#line4435">line 4435</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    The real eigenvalues
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Array</span>
+|
+
+<span class="param-type">TypedArray</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="getV"><span class="type-signature"></span>getV<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="global.html#AbstractMat">AbstractMat</a>}</span></h4>
+    
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="jsmatrix.js.html">jsmatrix.js</a>, <a href="jsmatrix.js.html#line4427">line 4427</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    The eigenvector matrix
 </div>
 
 
