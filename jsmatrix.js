@@ -2616,7 +2616,7 @@ class PLUD {
  * @param {AbstractMat} [out] Output whre LU will be compactly stored. If not specified a new matrix will be created.
  * @returns {PLUD} The LU decomposition with partial pivoting
  */
-function computePLUD(a, out) {
+function computePLUD(a, out = similar(a)) {
 
     const n = a.rows();
     const r = a.cols();
@@ -2625,10 +2625,6 @@ function computePLUD(a, out) {
     const permutes = TypedMatFactory.new(Int32Array).uninitialized(n, 1);
     map(permutes, (v, i) => i, permutes);
 
-    if (out === undefined) {
-        out = similar(a);
-
-    }
     insert(out, a);
     let numSwaps = 0;
 
