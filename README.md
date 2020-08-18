@@ -296,7 +296,7 @@ var a10 = MatF32.from([
 
 var maxa10 = m.reduce(a10, (accum, v) => Math.max(accum, Math.abs(v)), 0);
 console.log(maxa10);
-// 9
+// 10
 
 // The reduce operation can also take an initial value, which is useful if you don't want to operate on the same data as in the array
 // Here we concatenate all entries to a string
