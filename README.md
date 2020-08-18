@@ -1,6 +1,6 @@
 # JSMatrix
 
-This is a library for matrix and vector computations for JavaScript. Besides the general features such as multiplication, it also provides methods for solving equations and computing decompositions. Currently LU decomposition with partial pivoting, SVD and bidiagonalization are implemented.
+This is a library for matrix and vector computations for JavaScript. Besides the general features such as multiplication, it also provides methods for solving equations and computing decompositions. Currently LU decomposition with partial pivoting, Eigenvalue decomposition, SVD and bidiagonalization are implemented.
 Importantly, various kinds of views, such as for rows, columns, blocks, transpose and diagonals can be used to manipulate data more naturally. 
 
 All matrices support either typed storage or generic arrays. Special matrices can be implemented by yourself by providing some object with the AbstractMat interface specified in the documentation. Documentation can be found in the docs folder and to view without cloning under https://raw.githack.com/sibaku/jsmatrix/master/doc/index.html
