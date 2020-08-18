@@ -2555,6 +2555,24 @@ class PLUD {
     static new(P, L, U, numSwaps) {
         return new PLUD(P, L, U, numSwaps);
     }
+    /**
+     * Computes an LU decomposition with partial pivoting.
+     *
+     * The decomposition of a Matrix A is defined by: P * A = L * U
+     *
+     * P is a permutation matrix
+     * L is an upper triangular matrix
+     * U is a lower triangular matrix
+     *
+     * A can be reconstructed by A = P^T * L * U
+     *
+     * @param {AbstractMat} a Input matrix
+     * @param {AbstractMat} [out] Output whre LU will be compactly stored. If not specified a new matrix will be created.
+     * @returns {PLUD} The LU decomposition with partial pivoting
+     */
+    static compute(a, out) {
+        return computePLUD(a, out);
+    }
 
     /**
      * Solves Ax=b for x, where A is the matrix represented as this decomposition
