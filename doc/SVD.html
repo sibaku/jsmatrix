@@ -188,7 +188,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="jsmatrix.js.html">jsmatrix.js</a>, <a href="jsmatrix.js.html#line4521">line 4521</a>
+        <a href="jsmatrix.js.html">jsmatrix.js</a>, <a href="jsmatrix.js.html#line4019">line 4019</a>
     </li></ul></dd>
     
 
@@ -282,7 +282,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="jsmatrix.js.html">jsmatrix.js</a>, <a href="jsmatrix.js.html#line4525">line 4525</a>
+        <a href="jsmatrix.js.html">jsmatrix.js</a>, <a href="jsmatrix.js.html#line4023">line 4023</a>
     </li></ul></dd>
     
 
@@ -344,7 +344,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="jsmatrix.js.html">jsmatrix.js</a>, <a href="jsmatrix.js.html#line4523">line 4523</a>
+        <a href="jsmatrix.js.html">jsmatrix.js</a>, <a href="jsmatrix.js.html#line4021">line 4021</a>
     </li></ul></dd>
     
 
@@ -406,7 +406,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="jsmatrix.js.html">jsmatrix.js</a>, <a href="jsmatrix.js.html#line4527">line 4527</a>
+        <a href="jsmatrix.js.html">jsmatrix.js</a>, <a href="jsmatrix.js.html#line4025">line 4025</a>
     </li></ul></dd>
     
 
@@ -468,7 +468,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="jsmatrix.js.html">jsmatrix.js</a>, <a href="jsmatrix.js.html#line4529">line 4529</a>
+        <a href="jsmatrix.js.html">jsmatrix.js</a>, <a href="jsmatrix.js.html#line4027">line 4027</a>
     </li></ul></dd>
     
 
@@ -489,6 +489,182 @@
 
     
         <h3 class="subsection-title">Methods</h3>
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id=".compute"><span class="type-signature">(static) </span>compute<span class="signature">(m)</span><span class="type-signature"> &rarr; {<a href="SVD.html">SVD</a>}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Computes the singular value decomposition of a general matrix.
+
+A MxN matrix A can be decomposed into U * S * V^T
+
+For a MxN matrix with M >= N:
+U is a unitary MxN matrix
+S is a NxN diagonal matrix
+V is a unitary NxN matrix
+
+If M < N:
+U is a unitary NxN matrix
+S is a MxN diagonal matrix
+V is a unitary MxN matrix
+
+The diagonal entries of S are the singular values of A and the columns of U and V are the corresponding left and right singular vectors.
+The singular values and their singular vectors are sorted in ascending order. S is represented as a vector containing the singular values.
+
+Adapted from the JAMA library
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>m</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="global.html#AbstractMat">AbstractMat</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">The input matrix</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="jsmatrix.js.html">jsmatrix.js</a>, <a href="jsmatrix.js.html#line4066">line 4066</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    The SVD
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="SVD.html">SVD</a></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
 
         
             
@@ -643,7 +819,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="jsmatrix.js.html">jsmatrix.js</a>, <a href="jsmatrix.js.html#line4542">line 4542</a>
+        <a href="jsmatrix.js.html">jsmatrix.js</a>, <a href="jsmatrix.js.html#line4040">line 4040</a>
     </li></ul></dd>
     
 
@@ -761,7 +937,7 @@ If the matrix has full rank, this will equal the inverse
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="jsmatrix.js.html">jsmatrix.js</a>, <a href="jsmatrix.js.html#line4587">line 4587</a>
+        <a href="jsmatrix.js.html">jsmatrix.js</a>, <a href="jsmatrix.js.html#line4112">line 4112</a>
     </li></ul></dd>
     
 
@@ -963,7 +1139,7 @@ If the matrix has full rank, this will equal the inverse
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="jsmatrix.js.html">jsmatrix.js</a>, <a href="jsmatrix.js.html#line4552">line 4552</a>
+        <a href="jsmatrix.js.html">jsmatrix.js</a>, <a href="jsmatrix.js.html#line4076">line 4076</a>
     </li></ul></dd>
     
 
@@ -1119,7 +1295,7 @@ If the matrix has full rank, this will equal the inverse
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="jsmatrix.js.html">jsmatrix.js</a>, <a href="jsmatrix.js.html#line4562">line 4562</a>
+        <a href="jsmatrix.js.html">jsmatrix.js</a>, <a href="jsmatrix.js.html#line4086">line 4086</a>
     </li></ul></dd>
     
 
@@ -1193,7 +1369,7 @@ If the matrix has full rank, this will equal the inverse
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Tue Aug 18 2020 14:17:45 GMT+0200 (Central European Summer Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Wed Aug 19 2020 14:06:37 GMT+0200 (Central European Summer Time)
 </footer>
 
 <script> prettyPrint(); </script>

@@ -2644,7 +2644,7 @@ class PLUD {
  * @param {AbstractMat} [out] Output whre LU will be compactly stored. If not specified a new matrix will be created.
  * @returns {PLUD} The LU decomposition with partial pivoting
  */
-function computePLUD(a, out) {
+function computePLUD(a, out = similar(a)) {
 
     const n = a.rows();
     const r = a.cols();
@@ -2653,10 +2653,6 @@ function computePLUD(a, out) {
     const permutes = TypedMatFactory.new(Int32Array).uninitialized(n, 1);
     map(permutes, (v, i) => i, permutes);
 
-    if (out === undefined) {
-        out = similar(a);
-
-    }
     insert(out, a);
     let numSwaps = 0;
 
@@ -3093,504 +3089,6 @@ function unpackUBV(ubv) {
 }
 
 //*****************************************************
-// Adapted from GSL library
-function createGivens(a, b) {
-    let c, s;
-    if (b === 0.0) {
-        c = 1.0;
-        s = 0.0;
-    } else if (Math.abs(b) > Math.abs(a)) {
-        let t = -a / b;
-        let s1 = 1.0 / Math.sqrt(1 + t * t);
-        s = s1;
-        c = s1 * t;
-    } else {
-        let t = -b / a;
-        let c1 = 1.0 / Math.sqrt(1 + t * t);
-        c = c1;
-        s = c1 * t;
-    }
-
-    return { c: c, s: s };
-}
-
-//*****************************************************
-// Adapted from GSL library
-function trailingEigenvalue(d, f) {
-    const n = d.rows();
-
-    const da = d.at(n - 2);
-    const db = d.at(n - 1);
-    const fa = (n > 2) ? f.at(n - 3) : 0.0;
-    const fb = f.at(n - 2);
-
-    const ta = da * da + fa * fa;
-    const tb = db * db + fb * fb;
-    const tab = da * fb;
-
-    const dt = (ta - tb) / 2.0;
-
-    let mu;
-
-    if (dt >= 0) {
-        mu = tb - (tab * tab) / (dt + hypot(dt, tab));
-    } else {
-        mu = tb + (tab * tab) / ((-dt) + hypot(dt, tab));
-    }
-
-    return mu;
-}
-
-//*****************************************************
-// Adapted from GSL library
-function createSchur(d0, f0, d1) {
-    const apq = 2.0 * d0 * f0;
-    let c, s;
-    if (d0 === 0.0 || f0 === 0.0) {
-        c = 1.0;
-        s = 0.0;
-        return { c: c, s: s };
-    }
-
-    // TODO implement rescaling
-
-    if (apq !== 0.0) {
-        let t;
-        let tau = (f0 * f0 + (d1 + d0) * (d1 - d0)) / apq;
-
-        if (tau >= 0.0) {
-            t = 1.0 / (tau + hypot(1.0, tau));
-        } else {
-            t = -1.0 / (-tau + hypot(1.0, tau));
-        }
-
-        c = 1.0 / hypot(1.0, t);
-        s = t * c;
-    } else {
-        c = 1.0;
-        s = 0.0;
-    }
-
-    return { c: c, s: s };
-}
-
-//*****************************************************
-// Adapted from GSL library
-function svd2(d, f, U, V) {
-    let i;
-    let c, s, a11, a12, a21, a22;
-
-    const M = U.rows();
-    const N = V.rows();
-
-    const d0 = d.at(0);
-    const f0 = f.at(0);
-
-    const d1 = d.at(1);
-
-    if (d0 === 0.0) {
-        /* Eliminate off-diagonal element in [0,f0;0,d1] to make [d,0;0,0] */
-
-        let giv = createGivens(f0, d1);
-        c = giv.c;
-        s = giv.s;
-
-        /* compute B &lt;= G^T B X,  where X = [0,1;1,0] */
-
-        d.set(c * f0 - s * d1, 0);
-        f.set(s * f0 + c * d1, 0);
-        d.set(0.0, 1);
-
-        /* Compute U &lt;= U G */
-
-        for (i = 0; i &lt; M; i++) {
-            let Uip = U.at(i, 0);
-            let Uiq = U.at(i, 1);
-
-            U.set(c * Uip - s * Uiq, i, 0);
-            U.set(s * Uip + c * Uiq, i, 1);
-        }
-
-        /* Compute V &lt;= V X */
-
-        swapCol(V, 0, 1);
-
-        return;
-    } else if (d1 === 0.0) {
-        /* Eliminate off-diagonal element in [d0,f0;0,0] */
-
-        let giv = createGivens(d0, f0);
-        c = giv.c;
-        s = giv.s;
-        /* compute B &lt;= B G */
-
-        d.set(d0 * c - f0 * s, 0);
-        f.set(0.0, 0);
-
-        /* Compute V &lt;= V G */
-
-        for (i = 0; i &lt; N; i++) {
-            let Vip = V.at(i, 0);
-            let Viq = V.at(i, 1);
-
-            V.set(c * Vip - s * Viq, i, 0);
-            V.set(s * Vip + c * Viq, i, 1);
-        }
-
-    } else {
-        /* Make columns orthogonal, A = [d0, f0; 0, d1] * G */
-
-        const sh = createSchur(d0, f0, d1);
-        c = sh.c;
-        s = sh.s;
-        /* compute B &lt;= B G */
-
-        a11 = c * d0 - s * f0;
-        a21 = -s * d1;
-
-        a12 = s * d0 + c * f0;
-        a22 = c * d1;
-
-        /* Compute V &lt;= V G */
-
-        for (i = 0; i &lt; N; i++) {
-            let Vip = V.at(i, 0);
-            let Viq = V.at(i, 1);
-
-            V.set(c * Vip - s * Viq, i, 0);
-            V.set(s * Vip + c * Viq, i, 1);
-        }
-
-        /* Eliminate off-diagonal elements, bring column with largest
-           norm to first column */
-
-        if (hypot(a11, a21) &lt; hypot(a12, a22)) {
-            let t1, t2;
-
-            /* B &lt;= B X */
-
-            t1 = a11;
-            a11 = a12;
-            a12 = t1;
-            t2 = a21;
-            a21 = a22;
-            a22 = t2;
-
-            /* V &lt;= V X */
-            swapCol(V, 0, 1);
-        }
-
-        let giv = createGivens(a11, a21);
-        c = giv.c;
-        s = giv.s;
-
-        /* compute B &lt;= G^T B */
-
-        d.set(c * a11 - s * a21, 0);
-        f.set(c * a12 - s * a22, 0);
-        d.set(s * a12 + c * a22, 1);
-
-        /* Compute U &lt;= U G */
-
-        for (i = 0; i &lt; M; i++) {
-            let Uip = U.at(i, 0);
-            let Uiq = U.at(i, 1);
-
-            U.set(c * Uip - s * Uiq, i, 0);
-            U.set(s * Uip + c * Uiq, i, 1);
-        }
-
-    }
-}
-
-//*****************************************************
-// Adapted from GSL library
-function chaseOutIntermediateZero(d, f, U, k0) {
-
-    const M = U.rows();
-
-    const n = d.rows();
-    let c, s;
-    let x, y;
-    let k;
-
-    x = f.at(k0);
-    y = d.at(k0 + 1);
-
-    for (k = k0; k &lt; n - 1; k++) {
-        const giv = createGivens(y, -x);
-        c = giv.c;
-        s = giv.s;
-        /* Compute U &lt;= U G */
-
-
-        {
-            let i;
-
-            for (i = 0; i &lt; M; i++) {
-                let Uip = U.at(i, k0);
-                let Uiq = U.at(i, k + 1);
-
-                U.set(c * Uip - s * Uiq, i, k0);
-                U.set(s * Uip + c * Uiq, i, k + 1);
-            }
-        }
-
-        /* compute B &lt;= G^T B */
-
-        d.set(s * x + c * y, k + 1);
-
-        if (k === k0) {
-            f.set(c * x - s * y, k);
-        }
-
-        if (k &lt; n - 2) {
-            let z = f.at(k + 1);
-            f.set(c * z, k + 1);
-
-            x = -s * z;
-            y = d.at(k + 2);
-        }
-    }
-}
-
-//*****************************************************
-// Adapted from GSL library
-function chaseOutTrailingZero(d, f, V) {
-
-    const N = V.rows();
-    const n = d.rows();
-    let c, s;
-    let x, y;
-    let k;
-
-    x = d.at(n - 2);
-    y = f.at(n - 2);
-
-    for (k = n - 1; k-- > 0;) {
-        const giv = createGivens(x, y);
-        c = giv.c;
-        s = giv.s;
-        /* Compute V &lt;= V G where G = [c, s ; -s, c] */
-
-        {
-            let i;
-
-            for (i = 0; i &lt; N; i++) {
-                let Vip = V.at(i, k);
-                let Viq = V.at(i, n - 1);
-
-                V.set(c * Vip - s * Viq, i, k);
-                V.set(s * Vip + c * Viq, i, n - 1);
-            }
-        }
-
-        /* compute B &lt;= B G */
-
-        d.set(c * x - s * y, k);
-
-        if (k === n - 2) {
-
-            f.set(s * x + c * y, k);
-
-        }
-        if (k > 0) {
-            let z = f.at(k - 1);
-            f.set(c * z, k - 1);
-
-            x = d.at(k - 1);
-            y = s * z;
-        }
-    }
-}
-
-//*****************************************************
-// Adapted from GSL library
-function qrstep(d, f, U, V) {
-
-    const M = U.rows();
-    const N = V.rows();
-    const n = d.rows();
-    let y, z;
-    let ak, bk, zk, ap, bp, aq;
-    let i, k;
-
-    if (n === 1)
-        return;  /* shouldn't happen */
-
-    /* Compute 2x2 svd directly */
-
-    if (n === 2) {
-        svd2(d, f, U, V);
-        return;
-    }
-
-    /* Chase out any zeroes on the diagonal */
-
-    for (i = 0; i &lt; n - 1; i++) {
-        let d_i = d.at(i);
-
-        if (d_i === 0.0) {
-            chaseOutIntermediateZero(d, f, U, i);
-            return;
-        }
-    }
-
-    /* Chase out any zero at the end of the diagonal */
-
-    {
-        let d_nm1 = d.at(n - 1);
-
-        if (d_nm1 === 0.0) {
-            chaseOutTrailingZero(d, f, V);
-            return;
-        }
-    }
-
-
-    /* Apply QR reduction steps to the diagonal and offdiagonal */
-
-    {
-        let d0 = d.at(0);
-        let f0 = f.at(0);
-
-        let d1 = d.at(1);
-
-        {
-            let mu = trailingEigenvalue(d, f);
-
-            y = d0 * d0 - mu;
-            z = d0 * f0;
-        }
-
-        /* Set up the recurrence for Givens rotations on a bidiagonal matrix */
-
-        ak = 0;
-        bk = 0;
-
-        ap = d0;
-        bp = f0;
-
-        aq = d1;
-    }
-
-    for (k = 0; k &lt; n - 1; k++) {
-        let c, s;
-        const giv = createGivens(y, z);
-        c = giv.c;
-        s = giv.s;
-
-        /* Compute V &lt;= V G */
-
-
-        for (i = 0; i &lt; N; i++) {
-            let Vip = V.at(i, k);
-            let Viq = V.at(i, k + 1);
-
-            V.set(c * Vip - s * Viq, i, k);
-            V.set(s * Vip + c * Viq, i, k + 1);
-        }
-
-
-        /* compute B &lt;= B G */
-
-        {
-            let bk1 = c * bk - s * z;
-
-            let ap1 = c * ap - s * bp;
-            let bp1 = s * ap + c * bp;
-            let zp1 = -s * aq;
-
-            let aq1 = c * aq;
-
-            if (k > 0) {
-                f.set(bk1, k - 1);
-            }
-
-            ak = ap1;
-            bk = bp1;
-            zk = zp1;
-
-            ap = aq1;
-
-            if (k &lt; n - 2) {
-                bp = f.at(k + 1);
-            } else {
-                bp = 0.0;
-            }
-
-            y = ak;
-            z = zk;
-        }
-
-        let giv2 = createGivens(y, z);
-        c = giv2.c;
-        s = giv2.s;
-        /* Compute U &lt;= U G */
-
-
-        for (i = 0; i &lt; M; i++) {
-            let Uip = U.at(i, k);
-            let Uiq = U.at(i, k + 1);
-
-            U.set(c * Uip - s * Uiq, i, k);
-            U.set(s * Uip + c * Uiq, i, k + 1);
-        }
-
-        /* compute B &lt;= G^T B */
-
-        {
-            let ak1 = c * ak - s * zk;
-            let bk1 = c * bk - s * ap;
-            let zk1 = -s * bp;
-
-            let ap1 = s * bk + c * ap;
-            let bp1 = c * bp;
-
-            d.set(ak1, k);
-
-            ak = ak1;
-            bk = bk1;
-            zk = zk1;
-
-            ap = ap1;
-            bp = bp1;
-
-            if (k &lt; n - 2) {
-                aq = d.at(k + 2);
-            } else {
-                aq = 0.0;
-            }
-
-            y = bk;
-            z = zk;
-        }
-    }
-
-    f.set(bk, n - 2);
-    d.set(ap, n - 1);
-}
-
-//*****************************************************
-// Adapted from GSL library
-// Implements the unit round-off from "Matrix Computations" Algorithm 8.6.2
-function chopSmallElements(d, f) {
-    const N = d.rows();
-    let d_i = d.at(0);
-
-    for (let i = 0; i &lt; N - 1; i++) {
-        let f_i = f.at(i);
-        let d_ip1 = d.at(i + 1);
-
-        // TODO Use better epsilon
-        if (Math.abs(f_i) &lt; 1E-7 * (Math.abs(d_i) + Math.abs(d_ip1))) {
-            f.set(0.0, i);
-        }
-        d_i = d_ip1;
-    }
-
-}
-//*****************************************************
 function isSymmetric(a, eps = 0.0) {
     const n = a.rows();
     // only square matrices are symmetric
@@ -3898,7 +3396,7 @@ function hqr2(V, H, d, e) {
 
             // Wilkinson's original ad hoc shift
 
-            if (iter == 10) {
+            if (iter === 10) {
                 exshift += x;
                 for (let i = low; i &lt;= n; i++) {
                     H.set(H.at(i, i) - x, i, i);
@@ -4048,7 +3546,7 @@ function hqr2(V, H, d, e) {
 
         // Real vector
 
-        if (q == 0) {
+        if (q === 0) {
             let l = n;
             H.set(1.0, n, n);
             for (let i = n - 1; i >= 0; i--) {
@@ -4128,7 +3626,7 @@ function hqr2(V, H, d, e) {
                     s = sa;
                 } else {
                     l = i;
-                    if (e[i] == 0) {
+                    if (e[i] === 0) {
                         const [cdivr, cdivi] = cdiv(-ra, -sa, w, q);
                         H.set(cdivr, i, n - 1);
                         H.set(cdivi, i, n);
@@ -4572,6 +4070,32 @@ class SVD {
     }
 
     /**
+     * Computes the singular value decomposition of a general matrix.
+     *
+     * A MxN matrix A can be decomposed into U * S * V^T
+     *
+     * For a MxN matrix with M >= N:
+     * U is a unitary MxN matrix
+     * S is a NxN diagonal matrix
+     * V is a unitary NxN matrix
+     * 
+     * If M &lt; N:
+     * U is a unitary NxN matrix
+     * S is a MxN diagonal matrix
+     * V is a unitary MxN matrix
+     *
+     * The diagonal entries of S are the singular values of A and the columns of U and V are the corresponding left and right singular vectors.
+     * The singular values and their singular vectors are sorted in ascending order. S is represented as a vector containing the singular values.
+     *
+     * Adapted from the JAMA library
+     * @param {AbstractMat} m - The input matrix
+     * @returns {SVD} The SVD
+     */
+    static compute(m) {
+        return computeSVD(m);
+    }
+
+    /**
      * Finds the vector x that minimizes ||Ax - b||_2, where A is the matrix decomposed into this SVD.
      * @see solveSVD
      * @param {AbstractMat} b - The vector to solve for
@@ -4589,18 +4113,19 @@ class SVD {
      */
     toMat(out) {
         const U = this.U;
-        const V = this.V;
+        const Vt = this.Vt;
         const S = this.S;
 
         const M = U.rows();
-        const N = V.cols();
+        // since V will be 
+        const N = Vt.cols();
         out = out !== undefined ? out : similar(U, M, N);
 
         if (out.rows() !== M || out.cols() !== N) {
             throw new Error("Output matrix has wrong dimensions");
         }
 
-        mult(U, mult(Diagonal.new(toArray(S), M, N), transpose(V)), out);
+        mult(U, mult(Diagonal.new(toArray(S), U.cols(), Vt.rows()), Vt), out);
 
         return out;
 
@@ -4641,127 +4166,448 @@ class SVD {
  *
  * A MxN matrix A can be decomposed into U * S * V^T
  *
- * U is a unitary MxM matrix
+ * For a MxN matrix with M >= N:
+ * U is a unitary MxN matrix
+ * S is a NxN diagonal matrix
  * V is a unitary NxN matrix
+ * 
+ * If M &lt; N:
+ * U is a unitary NxN matrix
  * S is a MxN diagonal matrix
+ * V is a unitary MxN matrix
  *
  * The diagonal entries of S are the singular values of A and the columns of U and V are the corresponding left and right singular vectors.
  * The singular values and their singular vectors are sorted in ascending order. S is represented as a vector containing the singular values.
  *
- * Partially adapted from GSL library and based on the SVD algorithm from "Matrix Computations" in section 8.6
+ * Adapted from the JAMA library
  * @param {AbstractMat} m - The input matrix
  * @returns {SVD} The SVD
  */
-function computeSVD(m) {
+function computeSVD(A) {
 
     // in case of m &lt; n -> transpose temporarily
     let isTransposed = false;
 
-    if (m.rows() &lt; m.cols()) {
-        m = transpose(m);
+    if (A.rows() &lt; A.cols()) {
+        A = transpose(A);
         isTransposed = true;
     }
 
-    let M = m.rows();
-    let N = m.cols();
+    A = copy(A);
 
-    let K = Math.min(M, N);
+    const m = A.rows();
+    const n = A.cols();
 
-    const ubv = unpackUBV(computeUBVD(m));
+    const nu = Math.min(m, n);
+    const type = A.type();
+    const s = new type(Math.min(m + 1, n));
+    const U = similar(A, m, nu);
+    const V = similar(A, n, n);
+    const e = new type(n);
+    const work = new type(m);
+    const wantu = true;
+    const wantv = true;
 
+    // Reduce A to bidiagonal form, storing the diagonal elements
+    // in s and the super-diagonal elements in e.
 
-    // diagonal
-    const d = copy(diag(ubv.B));
-    const fac = TypedMatFactory.newFromMat(ubv.B);
-    // superdiagonal
-    const work = fac.uninitialized(N, 1);
+    const nct = Math.min(m - 1, n);
+    const nrt = Math.max(0, Math.min(n - 2, m));
+    for (let k = 0; k &lt; Math.max(nct, nrt); k++) {
+        if (k &lt; nct) {
 
-    const sd = subvec(work, 1);
-    for (let i = 0; i &lt; N - 1; i++) {
-        sd.set(ubv.B.at(i, i + 1), i);
+            // Compute the transformation for the k-th column and
+            // place the k-th diagonal in s[k].
+            // Compute 2-norm of k-th column without under/overflow.
+            s[k] = 0;
+            for (let i = k; i &lt; m; i++) {
+                s[k] = hypot(s[k], A.at(i, k));
+            }
+            if (s[k] != 0.0) {
+                if (A.at(k, k) &lt; 0.0) {
+                    s[k] = -s[k];
+                }
+                for (let i = k; i &lt; m; i++) {
+                    A.set(A.at(i, k) / s[k], i, k);
+                }
+                A.set(A.at(k, k) + 1.0, k, k);
+            }
+            s[k] = -s[k];
+        }
+        for (let j = k + 1; j &lt; n; j++) {
+            if ((k &lt; nct) &amp; (s[k] != 0.0)) {
+
+                // Apply the transformation.
+
+                let t = 0;
+                for (let i = k; i &lt; m; i++) {
+                    t += A.at(i, k) * A.at(i, j);
+                }
+                t = -t / A.at(k, k);
+                for (let i = k; i &lt; m; i++) {
+                    A.set(A.at(i, j) + t * A.at(i, k), i, j);
+                }
+            }
+
+            // Place the k-th row of A into e for the
+            // subsequent calculation of the row transformation.
+
+            e[j] = A.at(k, j);
+        }
+        if (wantu &amp; (k &lt; nct)) {
+
+            // Place the transformation in U for subsequent back
+            // multiplication.
+
+            for (let i = k; i &lt; m; i++) {
+                U.set(A.at(i, k), i, k);
+            }
+        }
+        if (k &lt; nrt) {
+
+            // Compute the k-th row transformation and place the
+            // k-th super-diagonal in e[k].
+            // Compute 2-norm without under/overflow.
+            e[k] = 0;
+            for (let i = k + 1; i &lt; n; i++) {
+                e[k] = hypot(e[k], e[i]);
+            }
+            if (e[k] != 0.0) {
+                if (e[k + 1] &lt; 0.0) {
+                    e[k] = -e[k];
+                }
+                for (let i = k + 1; i &lt; n; i++) {
+                    e[i] /= e[k];
+                }
+                e[k + 1] += 1.0;
+            }
+            e[k] = -e[k];
+            if ((k + 1 &lt; m) &amp; (e[k] != 0.0)) {
+
+                // Apply the transformation.
+
+                for (let i = k + 1; i &lt; m; i++) {
+                    work[i] = 0.0;
+                }
+                for (let j = k + 1; j &lt; n; j++) {
+                    for (let i = k + 1; i &lt; m; i++) {
+                        work[i] += e[j] * A.at(i, j);
+                    }
+                }
+                for (let j = k + 1; j &lt; n; j++) {
+                    const t = -e[j] / e[k + 1];
+                    for (let i = k + 1; i &lt; m; i++) {
+                        A.set(A.at(i, j) + t * work[i], i, j);
+                    }
+                }
+            }
+            if (wantv) {
+
+                // Place the transformation in V for subsequent
+                // back multiplication.
+
+                for (let i = k + 1; i &lt; n; i++) {
+                    V.set(e[i], i, k);
+                }
+            }
+        }
     }
 
-    // remove very small elements
-    chopSmallElements(d, sd);
+    // Set up the final bidiagonal matrix or order p.
 
-    const U = copy(ubv.U);
-    const V = ubv.Vt;
+    let p = Math.min(n, m + 1);
+    if (nct &lt; n) {
+        s[nct] = A.at(nct, nct);
+    }
+    if (m &lt; p) {
+        s[p - 1] = 0.0;
+    }
+    if (nrt + 1 &lt; p) {
+        e[nrt] = A.at(nrt, p - 1);
+    }
+    e[p - 1] = 0.0;
 
-    // Adapted from GSL 
-    let b = N - 1;
-    let iter = 0;
+    // If required, generate U.
 
-    let a;
-
-    while (b > 0) {
-        const sdbm1 = sd.at(b - 1);
-
-        if (sdbm1 === 0.0 || isNaN(sdbm1)) {
-            b--;
-            continue;
+    if (wantu) {
+        for (let j = nct; j &lt; nu; j++) {
+            for (let i = 0; i &lt; m; i++) {
+                U.set(0.0, i, j);
+            }
+            U.set(1.0, j, j);
         }
-        /* Find the largest unreduced block (a,b) starting from b
-         and working backwards */
+        for (let k = nct - 1; k >= 0; k--) {
+            if (s[k] != 0.0) {
+                for (let j = k + 1; j &lt; nu; j++) {
+                    let t = 0;
+                    for (let i = k; i &lt; m; i++) {
+                        t += U.at(i, k) * U.at(i, j);
+                    }
+                    t = -t / U.at(k, k);
+                    for (let i = k; i &lt; m; i++) {
+                        U.set(U.at(i, j) + t * U.at(i, k), i, j);
+                    }
+                }
+                for (let i = k; i &lt; m; i++) {
+                    U.set(-U.at(i, k), i, k);
+                }
+                U.set(1.0 + U.at(k, k), k, k);
+                for (let i = 0; i &lt; k - 1; i++) {
+                    U.set(0.0, i, k);
+                }
+            } else {
+                for (let i = 0; i &lt; m; i++) {
+                    U.set(0.0, i, k);
+                }
+                U.set(1.0, k, k);
+            }
+        }
+    }
 
-        a = b - 1;
+    // If required, generate V.
 
-        while (a > 0) {
-            const sdam1 = sd.at(a - 1);
+    if (wantv) {
+        for (let k = n - 1; k >= 0; k--) {
+            if ((k &lt; nrt) &amp; (e[k] != 0.0)) {
+                for (let j = k + 1; j &lt; nu; j++) {
+                    let t = 0;
+                    for (let i = k + 1; i &lt; n; i++) {
+                        t += V.at(i, k) * V.at(i, j);
+                    }
+                    t = -t / V.at(k + 1, k);
+                    for (let i = k + 1; i &lt; n; i++) {
+                        V.set(V.at(i, j) + t * V.at(i, k), i, j);
+                    }
+                }
+            }
+            for (let i = 0; i &lt; n; i++) {
+                V.set(0.0, i, k);
+            }
+            V.set(1.0, k, k);
+        }
+    }
 
-            if (sdam1 === 0.0 || isNaN(sdam1)) {
+    // Main iteration loop for the singular values.
+
+    const pp = p - 1;
+    let iter = 0;
+    const eps = Math.pow(2.0, -52.0);
+    const tiny = Math.pow(2.0, -966.0);
+    while (p > 0) {
+        let k, kase;
+
+        // Here is where a test for too many iterations would go.
+
+        // This section of the program inspects for
+        // negligible elements in the s and e arrays.  On
+        // completion the variables kase and k are set as follows.
+
+        // kase = 1     if s(p) and e[k-1] are negligible and k&lt;p
+        // kase = 2     if s(k) is negligible and k&lt;p
+        // kase = 3     if e[k-1] is negligible, k&lt;p, and
+        //              s(k), ..., s(p) are not negligible (qr step).
+        // kase = 4     if e(p-1) is negligible (convergence).
+
+        for (k = p - 2; k >= -1; k--) {
+            if (k === -1) {
                 break;
             }
-
-            a--;
-        }
-
-        iter++;
-
-        if (iter > 100 * N) {
-            throw new Error("SVD did not converge");
-        }
-
-        {
-            const nBlock = b - a + 1;
-
-
-            const dBlock = subvec(d, a, nBlock);
-            const sdBlock = subvec(sd, a, nBlock - 1);
-
-            const uBlock = block(U, 0, a, U.rows(), nBlock);
-
-            const vBlock = block(V, 0, a, V.rows(), nBlock);
-
-            qrstep(dBlock, sdBlock, uBlock, vBlock);
-        }
-    }
-
-
-    for (let j = 0; j &lt; K; j++) {
-        let Sj = d.at(j);
-
-        if (Sj &lt; 0.0) {
-            for (let i = 0; i &lt; N; i++) {
-                let Vij = V.at(i, j);
-                V.set(-Vij, i, j);
+            if (Math.abs(e[k]) &lt;=
+                tiny + eps * (Math.abs(s[k]) + Math.abs(s[k + 1]))) {
+                e[k] = 0.0;
+                break;
             }
-
-            d.set(-Sj, j);
         }
-    }
+        if (k === p - 2) {
+            kase = 4;
+        } else {
+            let ks;
+            for (ks = p - 1; ks >= k; ks--) {
+                if (ks === k) {
+                    break;
+                }
+                const t = (ks != p ? Math.abs(e[ks]) : 0.) +
+                    (ks != k + 1 ? Math.abs(e[ks - 1]) : 0.);
+                if (Math.abs(s[ks]) &lt;= tiny + eps * t) {
+                    s[ks] = 0.0;
+                    break;
+                }
+            }
+            if (ks === k) {
+                kase = 3;
+            } else if (ks === p - 1) {
+                kase = 1;
+            } else {
+                kase = 2;
+                k = ks;
+            }
+        }
+        k++;
 
-    // sort singular values
-    for (let i = 0; i &lt; K; i++) {
-        let maxSigma = argmax(subvec(d, i));
+        // Perform the task indicated by kase.
 
-        // argmax starts from offset
-        const rowMax = maxSigma.row + i;
-        if (rowMax !== i) {
-            // swap singular values stored in col vec
-            swapRow(d, i, rowMax);
-            // swap cols
-            swapCol(V, i, rowMax);
-            swapCol(U, i, rowMax);
+        switch (kase) {
+
+            // Deflate negligible s(p).
+
+            case 1: {
+                let f = e[p - 2];
+                e[p - 2] = 0.0;
+                for (let j = p - 2; j >= k; j--) {
+                    let t = hypot(s[j], f);
+                    const cs = s[j] / t;
+                    const sn = f / t;
+                    s[j] = t;
+                    if (j != k) {
+                        f = -sn * e[j - 1];
+                        e[j - 1] = cs * e[j - 1];
+                    }
+                    if (wantv) {
+                        for (let i = 0; i &lt; n; i++) {
+                            t = cs * V.at(i, j) + sn * V.at(i, p - 1);
+                            V.set(-sn * V.at(i, j) + cs * V.at(i, p - 1), i, p - 1);
+                            V.set(t, i, j);
+                        }
+                    }
+                }
+            }
+                break;
+
+            // Split at negligible s(k).
+
+            case 2: {
+                let f = e[k - 1];
+                e[k - 1] = 0.0;
+                for (let j = k; j &lt; p; j++) {
+                    let t = hypot(s[j], f);
+                    const cs = s[j] / t;
+                    const sn = f / t;
+                    s[j] = t;
+                    f = -sn * e[j];
+                    e[j] = cs * e[j];
+                    if (wantu) {
+                        for (let i = 0; i &lt; m; i++) {
+                            t = cs * U.at(i, j) + sn * U.at(i, k - 1);
+                            U.set(-sn * U.at(i, j) + cs * U.at(i, k - 1), i, k - 1);
+                            U.set(t, i, j);
+                        }
+                    }
+                }
+            }
+                break;
+
+            // Perform one qr step.
+
+            case 3: {
+
+                // Calculate the shift.
+
+                const scale = Math.max(Math.max(Math.max(Math.max(
+                    Math.abs(s[p - 1]), Math.abs(s[p - 2])), Math.abs(e[p - 2])),
+                    Math.abs(s[k])), Math.abs(e[k]));
+                const sp = s[p - 1] / scale;
+                const spm1 = s[p - 2] / scale;
+                const epm1 = e[p - 2] / scale;
+                const sk = s[k] / scale;
+                const ek = e[k] / scale;
+                const b = ((spm1 + sp) * (spm1 - sp) + epm1 * epm1) / 2.0;
+                const c = (sp * epm1) * (sp * epm1);
+                let shift = 0.0;
+                if ((b != 0.0) | (c != 0.0)) {
+                    shift = Math.sqrt(b * b + c);
+                    if (b &lt; 0.0) {
+                        shift = -shift;
+                    }
+                    shift = c / (b + shift);
+                }
+                let f = (sk + sp) * (sk - sp) + shift;
+                let g = sk * ek;
+
+                // Chase zeros.
+
+                for (let j = k; j &lt; p - 1; j++) {
+                    let t = hypot(f, g);
+                    let cs = f / t;
+                    let sn = g / t;
+                    if (j != k) {
+                        e[j - 1] = t;
+                    }
+                    f = cs * s[j] + sn * e[j];
+                    e[j] = cs * e[j] - sn * s[j];
+                    g = sn * s[j + 1];
+                    s[j + 1] = cs * s[j + 1];
+                    if (wantv) {
+                        for (let i = 0; i &lt; n; i++) {
+                            t = cs * V.at(i, j) + sn * V.at(i, j + 1);
+                            V.set(-sn * V.at(i, j) + cs * V.at(i, j + 1), i, j + 1);
+                            V.set(t, i, j);
+                        }
+                    }
+                    t = hypot(f, g);
+                    cs = f / t;
+                    sn = g / t;
+                    s[j] = t;
+                    f = cs * e[j] + sn * s[j + 1];
+                    s[j + 1] = -sn * e[j] + cs * s[j + 1];
+                    g = sn * e[j + 1];
+                    e[j + 1] = cs * e[j + 1];
+                    if (wantu &amp;&amp; (j &lt; m - 1)) {
+                        for (let i = 0; i &lt; m; i++) {
+                            t = cs * U.at(i, j) + sn * U.at(i, j + 1);
+                            U.set(-sn * U.at(i, j) + cs * U.at(i, j + 1), i, j + 1);
+                            U.set(t, i, j);
+                        }
+                    }
+                }
+                e[p - 2] = f;
+                iter = iter + 1;
+            }
+                break;
+
+            // Convergence.
+
+            case 4: {
+
+                // Make the singular values positive.
+
+                if (s[k] &lt;= 0.0) {
+                    s[k] = (s[k] &lt; 0.0 ? -s[k] : 0.0);
+                    if (wantv) {
+                        for (let i = 0; i &lt;= pp; i++) {
+                            V.set(-V.at(i, k), i, k);
+                        }
+                    }
+                }
+
+                // Order the singular values.
+
+                while (k &lt; pp) {
+                    if (s[k] >= s[k + 1]) {
+                        break;
+                    }
+                    let t = s[k];
+                    s[k] = s[k + 1];
+                    s[k + 1] = t;
+                    if (wantv &amp;&amp; (k &lt; n - 1)) {
+                        for (let i = 0; i &lt; n; i++) {
+                            t = V.at(i, k + 1);
+                            V.set(V.at(i, k), i, k + 1);
+                            V.set(t, i, k);
+                        }
+                    }
+                    if (wantu &amp;&amp; (k &lt; m - 1)) {
+                        for (let i = 0; i &lt; m; i++) {
+                            t = U.at(i, k + 1);
+                            U.set(U.at(i, k), i, k + 1);
+                            U.set(t, i, k);
+                        }
+                    }
+                    k++;
+                }
+                iter = 0;
+                p--;
+            }
+                break;
         }
     }
 
@@ -4776,10 +4622,10 @@ function computeSVD(m) {
     // redo transpose
     if (isTransposed) {
 
-        return SVD.new(V, d, U);
+        return SVD.new(V, VecF32.from(s), U);
 
     } else {
-        return SVD.new(U, d, V);
+        return SVD.new(U, VecF32.from(s), V);
     }
 
 }
@@ -5484,6 +5330,8 @@ export {
     rowreduce,
     rowwise,
     colwise,
+    swapCol,
+    swapRow,
     det,
     inv,
     rank,
@@ -5545,7 +5393,7 @@ export {
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Tue Aug 18 2020 14:17:44 GMT+0200 (Central European Summer Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Wed Aug 19 2020 14:06:37 GMT+0200 (Central European Summer Time)
 </footer>
 
 <script> prettyPrint(); </script>
